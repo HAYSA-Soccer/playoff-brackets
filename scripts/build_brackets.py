@@ -104,7 +104,7 @@ def parse_semi_finals(df):
         row_team_bottom = rows[i + 3]
         row_location = rows[i + 4]
 
-        col = 0  # semis always in first 3 columns
+        col = 1  # semis always in first 3 columns
 
         # Detect SF#
         sf_cell = row_sf[col + 1].strip()
@@ -166,7 +166,7 @@ def parse_finals(df):
         row_seed_bottom = rows[i + 4]
         row_location = rows[i + 5]
 
-        col = 0  # finals bracket always in first 3 columns
+        col = 1  # finals bracket always in first 3 columns
 
         # Detect F#
         f_cell = row_seed_top[col + 1].strip()
