@@ -86,6 +86,8 @@ def parse_qtr_finals(df):
 
 
 
+
+
 def parse_semi_finals(df):
     rows = df.fillna("").astype(str).values.tolist()
     results = []
@@ -103,37 +105,29 @@ def parse_semi_finals(df):
         row_team_bottom = rows[i + 3]
         row_location = rows[i + 4]
 
-        # Detect SF#
-        sf_game = None
-        sf_col = None
-        for col in range(0, len(row_sf), 3):
-            cell = row_sf[col + 1].strip() if col + 1 < len(row_sf) else ""
-            if sf_pattern.match(cell):
-                sf_game = cell
-                sf_col = col
-                break
+        # ALWAYS use first 3 columns
+        col = 0
 
-        if not sf_game:
+        sf_cell = row_sf[col + 1].strip() if col + 1 < len(row_sf) else ""
+        if not sf_pattern.match(sf_cell):
             i += 1
             continue
 
-        # Extract seeds & teams
-        higher_seed = row_seed_top[sf_col].strip()
-        higher_team = row_team_top[sf_col].strip()
-        lower_seed = row_sf[sf_col].strip()
-        lower_team = row_team_bottom[sf_col].strip()
+        sf_game = sf_cell
 
-        # Extract optional date/time/location
-        date = row_team_top[sf_col + 1].strip() if sf_col + 1 < len(row_team_top) else ""
-        time = row_team_bottom[sf_col + 1].strip() if sf_col + 1 < len(row_team_bottom) else ""
-        location = row_location[sf_col].strip() if sf_col < len(row_location) else ""
+        higher_seed = row_seed_top[col].strip()
+        higher_team = row_team_top[col].strip()
+        lower_seed = row_sf[col].strip()
+        lower_team = row_team_bottom[col].strip()
 
-        # Validate seeds
+        date = row_team_top[col + 1].strip()
+        time = row_team_bottom[col + 1].strip()
+        location = row_location[col].strip()
+
         if not seed_pattern.search(higher_seed) or not seed_pattern.search(lower_seed):
             i += 1
             continue
 
-        # Extract division
         division = re.sub(r"\s*\d+(st|nd|rd|th)$", "", higher_seed, flags=re.IGNORECASE)
         division = division.replace(" ", "")
 
@@ -149,11 +143,9 @@ def parse_semi_finals(df):
             "location": location,
         })
 
-        # Move to next 5‑row block
         i += 5
 
     return results
-
 
 
 def parse_finals(df):
@@ -174,37 +166,28 @@ def parse_finals(df):
         row_seed_bottom = rows[i + 4]
         row_location = rows[i + 5]
 
-        # Detect F#
-        fgame = None
-        fcol = None
-        for col in range(0, len(row_seed_top), 3):
-            cell = row_seed_top[col + 1].strip() if col + 1 < len(row_seed_top) else ""
-            if fgame_pattern.match(cell):
-                fgame = cell
-                fcol = col
-                break
+        col = 0  # ALWAYS use first 3 columns
 
-        if not fgame:
+        f_cell = row_seed_top[col + 1].strip()
+        if not fgame_pattern.match(f_cell):
             i += 1
             continue
 
-        # Extract seeds & teams
-        higher_seed = row_seed_top[fcol].strip()
-        higher_team = row_team_top[fcol].strip()
-        lower_seed = row_seed_bottom[fcol].strip()
-        lower_team = row_team_bottom[fcol].strip()
+        fgame = f_cell
 
-        # Extract optional date/time/location
-        date = row_team_top[fcol + 1].strip() if fcol + 1 < len(row_team_top) else ""
-        time = row_team_bottom[fcol + 1].strip() if fcol + 1 < len(row_team_bottom) else ""
-        location = row_location[fcol].strip() if fcol < len(row_location) else ""
+        higher_seed = row_seed_top[col].strip()
+        higher_team = row_team_top[col].strip()
+        lower_seed = row_seed_bottom[col].strip()
+        lower_team = row_team_bottom[col].strip()
 
-        # Validate seeds
+        date = row_team_top[col + 1].strip()
+        time = row_team_bottom[col + 1].strip()
+        location = row_location[col].strip()
+
         if not seed_pattern.search(higher_seed) or not seed_pattern.search(lower_seed):
             i += 1
             continue
 
-        # Extract division
         division = re.sub(r"\s*\d+(st|nd|rd|th)$", "", higher_seed, flags=re.IGNORECASE)
         division = division.replace(" ", "")
 
@@ -220,10 +203,10 @@ def parse_finals(df):
             "location": location,
         })
 
-        # Move to next 6‑row block
         i += 6
 
     return results
+
 
 
 
