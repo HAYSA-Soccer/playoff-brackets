@@ -1,100 +1,4 @@
 {
-  "8.2boys": {
-    "quarterfinal": {
-      "game": "Q3",
-      "team1": {
-        "seed": "8.2 boys 3rd",
-        "name": "WHTH (Gould)"
-      },
-      "team2": {
-        "seed": "8.2 boys 6th",
-        "name": "HOLA (Luyo)"
-      },
-      "date": "",
-      "time": "",
-      "location": "",
-      "status": "highlight"
-    },
-    "semifinal": {
-      "game": "",
-      "team1": {
-        "seed": "",
-        "name": ""
-      },
-      "team2": {
-        "seed": "",
-        "name": ""
-      },
-      "date": "",
-      "time": "",
-      "location": "",
-      "status": "dim"
-    },
-    "final": {
-      "game": "",
-      "team1": {
-        "seed": "",
-        "name": ""
-      },
-      "team2": {
-        "seed": "",
-        "name": ""
-      },
-      "date": "",
-      "time": "",
-      "location": "",
-      "cup_name": "",
-      "status": "dim"
-    }
-  },
-  "6.2girls": {
-    "quarterfinal": {
-      "game": "Q11",
-      "team1": {
-        "seed": "6.2 girls 4th",
-        "name": "HOLA(Gracie)"
-      },
-      "team2": {
-        "seed": "6.2 girls 5th",
-        "name": "BRA (Wilson)"
-      },
-      "date": "",
-      "time": "",
-      "location": "",
-      "status": "highlight"
-    },
-    "semifinal": {
-      "game": "",
-      "team1": {
-        "seed": "",
-        "name": ""
-      },
-      "team2": {
-        "seed": "",
-        "name": ""
-      },
-      "date": "",
-      "time": "",
-      "location": "",
-      "status": "dim"
-    },
-    "final": {
-      "game": "",
-      "team1": {
-        "seed": "",
-        "name": ""
-      },
-      "team2": {
-        "seed": "",
-        "name": ""
-      },
-      "date": "",
-      "time": "",
-      "location": "",
-      "cup_name": "",
-      "status": "dim"
-    }
-  },
   "B6.4": {
     "quarterfinal": {
       "game": "Q12",
@@ -115,11 +19,11 @@
       "game": "",
       "team1": {
         "seed": "",
-        "name": ""
+        "name": "Winner of Quarterfinal Game 11"
       },
       "team2": {
         "seed": "",
-        "name": ""
+        "name": "Winner of Quarterfinal Game 12"
       },
       "date": "",
       "time": "",
@@ -130,11 +34,299 @@
       "game": "",
       "team1": {
         "seed": "",
-        "name": ""
+        "name": "Winner of Semifinal Game 11"
       },
       "team2": {
         "seed": "",
-        "name": ""
+        "name": "Winner of Semifinal Game 12"
+      },
+      "date": "",
+      "time": "",
+      "location": "",
+      "cup_name": "",
+      "status": "dim"
+    }
+  },
+  "G8.2": {
+    "quarterfinal": {
+      "game": "",
+      "team1": {
+        "seed": "",
+        "name": "Winner of Quarterfinal Game 11"
+      },
+      "team2": {
+        "seed": "",
+        "name": "Winner of Quarterfinal Game 12"
+      },
+      "date": "",
+      "time": "",
+      "location": "",
+      "status": "dim"
+    },
+    "semifinal": {
+      "game": "",
+      "team1": {
+        "seed": "",
+        "name": "Winner of Quarterfinal Game 11"
+      },
+      "team2": {
+        "seed": "",
+        "name": "Winner of Quarterfinal Game 12"
+      },
+      "date": "",
+      "time": "",
+      "location": "",
+      "status": "dim"
+    },
+    "final": {
+      "game": "",
+      "team1": {
+        "seed": "",
+        "name": "Winner of Semifinal Game 11"
+      },
+      "team2": {
+        "seed": "",
+        "name": "Winner of Semifinal Game 12"
+      },
+      "date": "",
+      "time": "",
+      "location": "",
+      "cup_name": "",
+      "status": "dim"
+    }
+  },
+  "B8.2": {
+    "quarterfinal": {
+      "game": "",
+      "team1": {
+        "seed": "",
+        "name": "Winner of Quarterfinal Game 11"
+      },
+      "team2": {
+        "seed": "",
+        "name": "Winner of Quarterfinal Game 12"
+      },
+      "date": "",
+      "time": "",
+      "location": "",
+      "status": "dim"
+    },
+    "semifinal": {
+      "game": "",
+      "team1": {
+        "seed": "",
+        "name": "Winner of Quarterfinal Game 11"
+      },
+      "team2": {
+        "seed": "",
+        "name": "Winner of Quarterfinal Game 12"
+      },
+      "date": "",
+      "time": "",
+      "location": "",
+      "status": "dim"
+    },
+    "final": {
+      "game": "",
+      "team1": {
+        "seed": "",
+        "name": "Winner of Semifinal Game 11"
+      },
+      "team2": {
+        "seed": "",
+        "name": "Winner of Semifinal Game 12"
+      },
+      "date": "",
+      "time": "",
+      "location": "",
+      "cup_name": "",
+      "status": "dim"
+    }
+  },
+  "B10.2": {
+    "quarterfinal": {
+      "game": "",
+      "team1": {
+        "seed": "",
+        "name": "Winner of Quarterfinal Game 11"
+      },
+      "team2": {
+        "seed": "",
+        "name": "Winner of Quarterfinal Game 12"
+      },
+      "date": "",
+      "time": "",
+      "location": "",
+      "status": "dim"
+    },
+    "semifinal": {
+      "game": "",
+      "team1": {
+        "seed": "",
+        "name": "Winner of Quarterfinal Game 11"
+      },
+      "team2": {
+        "seed": "",
+        "name": "Winner of Quarterfinal Game 12"
+      },
+      "date": "",
+      "time": "",
+      "location": "",
+      "status": "dim"
+    },
+    "final": {
+      "game": "",
+      "team1": {
+        "seed": "",
+        "name": "Winner of Semifinal Game 11"
+      },
+      "team2": {
+        "seed": "",
+        "name": "Winner of Semifinal Game 12"
+      },
+      "date": "",
+      "time": "",
+      "location": "",
+      "cup_name": "",
+      "status": "dim"
+    }
+  },
+  "BPG.1": {
+    "quarterfinal": {
+      "game": "",
+      "team1": {
+        "seed": "",
+        "name": "Winner of Quarterfinal Game 11"
+      },
+      "team2": {
+        "seed": "",
+        "name": "Winner of Quarterfinal Game 12"
+      },
+      "date": "",
+      "time": "",
+      "location": "",
+      "status": "dim"
+    },
+    "semifinal": {
+      "game": "",
+      "team1": {
+        "seed": "",
+        "name": "Winner of Quarterfinal Game 11"
+      },
+      "team2": {
+        "seed": "",
+        "name": "Winner of Quarterfinal Game 12"
+      },
+      "date": "",
+      "time": "",
+      "location": "",
+      "status": "dim"
+    },
+    "final": {
+      "game": "",
+      "team1": {
+        "seed": "",
+        "name": "Winner of Semifinal Game 11"
+      },
+      "team2": {
+        "seed": "",
+        "name": "Winner of Semifinal Game 12"
+      },
+      "date": "",
+      "time": "",
+      "location": "",
+      "cup_name": "",
+      "status": "dim"
+    }
+  },
+  "B6.2": {
+    "quarterfinal": {
+      "game": "",
+      "team1": {
+        "seed": "",
+        "name": "Winner of Quarterfinal Game 11"
+      },
+      "team2": {
+        "seed": "",
+        "name": "Winner of Quarterfinal Game 12"
+      },
+      "date": "",
+      "time": "",
+      "location": "",
+      "status": "dim"
+    },
+    "semifinal": {
+      "game": "",
+      "team1": {
+        "seed": "",
+        "name": "Winner of Quarterfinal Game 11"
+      },
+      "team2": {
+        "seed": "",
+        "name": "Winner of Quarterfinal Game 12"
+      },
+      "date": "",
+      "time": "",
+      "location": "",
+      "status": "dim"
+    },
+    "final": {
+      "game": "",
+      "team1": {
+        "seed": "",
+        "name": "Winner of Semifinal Game 11"
+      },
+      "team2": {
+        "seed": "",
+        "name": "Winner of Semifinal Game 12"
+      },
+      "date": "",
+      "time": "",
+      "location": "",
+      "cup_name": "",
+      "status": "dim"
+    }
+  },
+  "G6.2": {
+    "quarterfinal": {
+      "game": "",
+      "team1": {
+        "seed": "",
+        "name": "Winner of Quarterfinal Game 11"
+      },
+      "team2": {
+        "seed": "",
+        "name": "Winner of Quarterfinal Game 12"
+      },
+      "date": "",
+      "time": "",
+      "location": "",
+      "status": "dim"
+    },
+    "semifinal": {
+      "game": "",
+      "team1": {
+        "seed": "",
+        "name": "Winner of Quarterfinal Game 11"
+      },
+      "team2": {
+        "seed": "",
+        "name": "Winner of Quarterfinal Game 12"
+      },
+      "date": "",
+      "time": "",
+      "location": "",
+      "status": "dim"
+    },
+    "final": {
+      "game": "",
+      "team1": {
+        "seed": "",
+        "name": "Winner of Semifinal Game 11"
+      },
+      "team2": {
+        "seed": "",
+        "name": "Winner of Semifinal Game 12"
       },
       "date": "",
       "time": "",

@@ -8,7 +8,6 @@
 <body>
   <header>
     <h1>HOLA Playoff Brackets 2026</h1>
-    <p>Visual paths to the championship for all HOLA teams.</p>
   </header>
 
   <main id="brackets"></main>
@@ -48,95 +47,34 @@
         const wrapper = document.createElement('div');
         wrapper.className = 'bracket-grid';
 
-        //
-        // QUARTERFINAL
-        //
-        const q = document.createElement('div');
-        q.className = 'round round-q';
-        if (bracket.quarterfinal.game) {
-          const metaClass = getMetaClass(bracket.quarterfinal.date, bracket.quarterfinal.time);
-          const t1 = bracket.quarterfinal.team1.name
-            ? bracket.quarterfinal.team1.seed + " " + bracket.quarterfinal.team1.name
-            : bracket.quarterfinal.team1.seed;
-          const t2 = bracket.quarterfinal.team2.name
-            ? bracket.quarterfinal.team2.seed + " " + bracket.quarterfinal.team2.name
-            : bracket.quarterfinal.team2.seed;
+        function renderRound(round, label) {
+          const r = document.createElement('div');
+          r.className = 'round';
 
-          q.innerHTML = `
-            <div class="match match-hola ${bracket.quarterfinal.status}">
-              <div class="game-label">${bracket.quarterfinal.game} • Quarterfinal</div>
+          const metaClass = getMetaClass(round.date, round.time);
+
+          const t1 = round.team1.name || round.team1.seed;
+          const t2 = round.team2.name || round.team2.seed;
+
+          r.innerHTML = `
+            <div class="match ${round.status}">
+              <div class="game-label">${round.game || label}</div>
               <div class="teams">
                 <div>${t1}</div>
                 <div>${t2}</div>
               </div>
               <div class="meta ${metaClass}">
-                <span>📍 ${bracket.quarterfinal.location || "—"}</span>
-                <span>🕒 ${bracket.quarterfinal.date || "—"} ${bracket.quarterfinal.time || ""}</span>
+                <span>📍 ${round.location || "—"}</span>
+                <span>🕒 ${round.date || "—"} ${round.time || ""}</span>
               </div>
             </div>
           `;
+          return r;
         }
-        wrapper.appendChild(q);
 
-        //
-        // SEMIFINAL
-        //
-        const s = document.createElement('div');
-        s.className = 'round round-s';
-        if (bracket.semifinal.game) {
-          const metaClass = getMetaClass(bracket.semifinal.date, bracket.semifinal.time);
-          const t1 = bracket.semifinal.team1.name
-            ? bracket.semifinal.team1.name
-            : bracket.semifinal.team1.seed;
-          const t2 = bracket.semifinal.team2.name
-            ? bracket.semifinal.team2.name
-            : bracket.semifinal.team2.seed;
-
-          s.innerHTML = `
-            <div class="match ${bracket.semifinal.status}">
-              <div class="game-label">${bracket.semifinal.game} • Semifinal</div>
-              <div class="teams">
-                <div>${t1}</div>
-                <div>${t2}</div>
-              </div>
-              <div class="meta ${metaClass}">
-                <span>📍 ${bracket.semifinal.location || "—"}</span>
-                <span>🕒 ${bracket.semifinal.date || "—"} ${bracket.semifinal.time || ""}</span>
-              </div>
-            </div>
-          `;
-        }
-        wrapper.appendChild(s);
-
-        //
-        // FINAL
-        //
-        const f = document.createElement('div');
-        f.className = 'round round-f';
-        if (bracket.final.game) {
-          const metaClass = getMetaClass(bracket.final.date, bracket.final.time);
-          const t1 = bracket.final.team1.name
-            ? bracket.final.team1.name
-            : bracket.final.team1.seed;
-          const t2 = bracket.final.team2.name
-            ? bracket.final.team2.name
-            : bracket.final.team2.seed;
-
-          f.innerHTML = `
-            <div class="match match-final ${bracket.final.status}">
-              <div class="game-label">${bracket.final.game} • Final${bracket.final.cup_name ? " • " + bracket.final.cup_name : ""}</div>
-              <div class="teams">
-                <div>${t1}</div>
-                <div>${t2}</div>
-              </div>
-              <div class="meta ${metaClass}">
-                <span>📍 ${bracket.final.location || "—"}</span>
-                <span>🕒 ${bracket.final.date || "—"} ${bracket.final.time || ""}</span>
-              </div>
-            </div>
-          `;
-        }
-        wrapper.appendChild(f);
+        wrapper.appendChild(renderRound(bracket.quarterfinal, "Quarterfinal"));
+        wrapper.appendChild(renderRound(bracket.semifinal, "Semifinal"));
+        wrapper.appendChild(renderRound(bracket.final, "Final"));
 
         section.appendChild(wrapper);
         container.appendChild(section);
