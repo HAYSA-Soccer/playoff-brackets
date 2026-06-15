@@ -14,6 +14,24 @@
   <main id="brackets"></main>
 
   <script>
+    function getMetaClass(dateStr, timeStr) {
+      if (!dateStr || !timeStr) return "meta-past";
+
+      const dt = new Date(dateStr + " " + timeStr);
+      if (isNaN(dt.getTime())) return "meta-past";
+
+      const now = new Date();
+
+      const sameDay =
+        dt.getFullYear() === now.getFullYear() &&
+        dt.getMonth() === now.getMonth() &&
+        dt.getDate() === now.getDate();
+
+      if (dt > now) return "meta-upcoming";
+      if (sameDay) return "meta-today";
+      return "meta-past";
+    }
+
     async function loadBrackets() {
       const res = await fetch('brackets.json');
       const data = await res.json();
@@ -36,16 +54,24 @@
         const q = document.createElement('div');
         q.className = 'round round-q';
         if (bracket.quarterfinal.game) {
+          const metaClass = getMetaClass(bracket.quarterfinal.date, bracket.quarterfinal.time);
+          const t1 = bracket.quarterfinal.team1.name
+            ? bracket.quarterfinal.team1.seed + " " + bracket.quarterfinal.team1.name
+            : bracket.quarterfinal.team1.seed;
+          const t2 = bracket.quarterfinal.team2.name
+            ? bracket.quarterfinal.team2.seed + " " + bracket.quarterfinal.team2.name
+            : bracket.quarterfinal.team2.seed;
+
           q.innerHTML = `
-            <div class="match match-hola">
+            <div class="match match-hola ${bracket.quarterfinal.status}">
               <div class="game-label">${bracket.quarterfinal.game} • Quarterfinal</div>
               <div class="teams">
-                <div>${bracket.quarterfinal.team1.seed} ${bracket.quarterfinal.team1.name}</div>
-                <div>${bracket.quarterfinal.team2.seed} ${bracket.quarterfinal.team2.name}</div>
+                <div>${t1}</div>
+                <div>${t2}</div>
               </div>
-              <div class="meta">
+              <div class="meta ${metaClass}">
                 <span>📍 ${bracket.quarterfinal.location || "—"}</span>
-                <span>🕒 ${bracket.quarterfinal.time || "—"}</span>
+                <span>🕒 ${bracket.quarterfinal.date || "—"} ${bracket.quarterfinal.time || ""}</span>
               </div>
             </div>
           `;
@@ -58,16 +84,24 @@
         const s = document.createElement('div');
         s.className = 'round round-s';
         if (bracket.semifinal.game) {
+          const metaClass = getMetaClass(bracket.semifinal.date, bracket.semifinal.time);
+          const t1 = bracket.semifinal.team1.name
+            ? bracket.semifinal.team1.name
+            : bracket.semifinal.team1.seed;
+          const t2 = bracket.semifinal.team2.name
+            ? bracket.semifinal.team2.name
+            : bracket.semifinal.team2.seed;
+
           s.innerHTML = `
-            <div class="match">
+            <div class="match ${bracket.semifinal.status}">
               <div class="game-label">${bracket.semifinal.game} • Semifinal</div>
               <div class="teams">
-                <div>${bracket.semifinal.team1.seed} ${bracket.semifinal.team1.name}</div>
-                <div>${bracket.semifinal.team2.seed} ${bracket.semifinal.team2.name}</div>
+                <div>${t1}</div>
+                <div>${t2}</div>
               </div>
-              <div class="meta">
+              <div class="meta ${metaClass}">
                 <span>📍 ${bracket.semifinal.location || "—"}</span>
-                <span>🕒 ${bracket.semifinal.time || "—"}</span>
+                <span>🕒 ${bracket.semifinal.date || "—"} ${bracket.semifinal.time || ""}</span>
               </div>
             </div>
           `;
@@ -80,16 +114,24 @@
         const f = document.createElement('div');
         f.className = 'round round-f';
         if (bracket.final.game) {
+          const metaClass = getMetaClass(bracket.final.date, bracket.final.time);
+          const t1 = bracket.final.team1.name
+            ? bracket.final.team1.name
+            : bracket.final.team1.seed;
+          const t2 = bracket.final.team2.name
+            ? bracket.final.team2.name
+            : bracket.final.team2.seed;
+
           f.innerHTML = `
-            <div class="match match-final">
-              <div class="game-label">${bracket.final.game} • Final</div>
+            <div class="match match-final ${bracket.final.status}">
+              <div class="game-label">${bracket.final.game} • Final${bracket.final.cup_name ? " • " + bracket.final.cup_name : ""}</div>
               <div class="teams">
-                <div>${bracket.final.team1.seed} ${bracket.final.team1.name}</div>
-                <div>${bracket.final.team2.seed} ${bracket.final.team2.name}</div>
+                <div>${t1}</div>
+                <div>${t2}</div>
               </div>
-              <div class="meta">
+              <div class="meta ${metaClass}">
                 <span>📍 ${bracket.final.location || "—"}</span>
-                <span>🕒 ${bracket.final.time || "—"}</span>
+                <span>🕒 ${bracket.final.date || "—"} ${bracket.final.time || ""}</span>
               </div>
             </div>
           `;
