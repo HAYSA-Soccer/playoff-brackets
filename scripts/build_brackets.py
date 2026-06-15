@@ -204,7 +204,7 @@ def parse_finals(df):
 def build_brackets(qtr_data, semi_data, final_data):
     brackets = {}
 
-    # index semis and finals by division
+    # Index semis and finals by division
     semis_by_div = {}
     for s in semi_data:
         semis_by_div.setdefault(s["division"], []).append(s)
@@ -213,31 +213,35 @@ def build_brackets(qtr_data, semi_data, final_data):
     for f in final_data:
         finals_by_div.setdefault(f["division"], []).append(f)
 
-    # group QTR by division
+    # Group QTR by division
     qtrs_by_div = {}
     for q in qtr_data:
         qtrs_by_div.setdefault(q["division"], []).append(q)
 
+    # ---------------------------------------------------------
+    # 1. Divisions where HOLA appears in QTR
+    # ---------------------------------------------------------
     for division, qgames in qtrs_by_div.items():
-        # find semis that reference these Q-games
         semis = semis_by_div.get(division, [])
         finals = finals_by_div.get(division, [])
 
-        # pick first semi and final for path (simplified)
         semi = semis[0] if semis else None
         final = finals[0] if finals else None
 
-        # find HOLA in Q-games
+        # Find the Q-game with HOLA
         hola_q = None
         for q in qgames:
             if "HOLA" in q["higher_team"] or "HOLA" in q["lower_team"]:
                 hola_q = q
                 break
         if not hola_q:
-            continue  # skip divisions without HOLA in QTR
+            continue
 
         bracket = {}
 
+        # -------------------------
+        # Quarterfinal
+        # -------------------------
         bracket["quarterfinal"] = {
             "game": hola_q["qgame"],
             "team1": {
@@ -248,56 +252,86 @@ def build_brackets(qtr_data, semi_data, final_data):
                 "seed": hola_q["lower_seed_label"],
                 "name": hola_q["lower_team"],
             },
-            "location": "Bridgewater F?",
-            "time": "",
+            "date": hola_q.get("date", ""),
+            "time": hola_q.get("time", ""),
+            "location": hola_q.get("location", ""),
         }
 
+        # -------------------------
+        # Semifinal
+        # -------------------------
         if semi:
             bracket["semifinal"] = {
-                "game": semi["sgame"],
-                "from": semi["winners"],
-                "location": f"{semi['location']} {semi['field']}",
-                "time": semi["time"],
+                "game": semi["game"],
+                "team1": {
+                    "seed": semi["higher_seed_label"],
+                    "name": semi["higher_team"],
+                },
+                "team2": {
+                    "seed": semi["lower_seed_label"],
+                    "name": semi["lower_team"],
+                },
+                "date": semi.get("date", ""),
+                "time": semi.get("time", ""),
+                "location": semi.get("location", ""),
             }
         else:
             bracket["semifinal"] = {
                 "game": "",
-                "from": ["TBD", "TBD"],
-                "location": "",
+                "team1": {"seed": "", "name": ""},
+                "team2": {"seed": "", "name": ""},
+                "date": "",
                 "time": "",
+                "location": "",
             }
 
+        # -------------------------
+        # Final
+        # -------------------------
         if final:
             bracket["final"] = {
-                "game": final["fgame"],
-                "from": [final["team1"] or "Winner Semi", final["team2"] or "Winner other Semi"],
-                "location": f"{final['location']} {final['field']}",
-                "time": final["time"],
+                "game": final["game"],
+                "team1": {
+                    "seed": final["higher_seed_label"],
+                    "name": final["higher_team"],
+                },
+                "team2": {
+                    "seed": final["lower_seed_label"],
+                    "name": final["lower_team"],
+                },
+                "date": final.get("date", ""),
+                "time": final.get("time", ""),
+                "location": final.get("location", ""),
             }
         else:
             bracket["final"] = {
                 "game": "",
-                "from": ["TBD", "TBD"],
-                "location": "",
+                "team1": {"seed": "", "name": ""},
+                "team2": {"seed": "", "name": ""},
+                "date": "",
                 "time": "",
+                "location": "",
             }
 
         brackets[division] = bracket
 
-    # also handle divisions where HOLA appears only in semis or finals
+    # ---------------------------------------------------------
+    # 2. Divisions where HOLA appears ONLY in semis
+    # ---------------------------------------------------------
     for division, semis in semis_by_div.items():
         if division in brackets:
             continue
+
         hola_in_semi = any(
             "HOLA" in s.get("higher_team", "") or
             "HOLA" in s.get("lower_team", "")
             for s in semis
         )
-
         if not hola_in_semi:
             continue
-        finals = finals_by_div.get(division, [])
+
         semi = semis[0]
+        finals = finals_by_div.get(division, [])
         final = finals[0] if finals else None
 
         bracket = {
@@ -305,40 +339,67 @@ def build_brackets(qtr_data, semi_data, final_data):
                 "game": "",
                 "team1": {"seed": "", "name": ""},
                 "team2": {"seed": "", "name": ""},
-                "location": "",
+                "date": "",
                 "time": "",
+                "location": "",
             },
             "semifinal": {
-                "game": semi["sgame"],
-                "from": semi["winners"],
-                "location": f"{semi['location']} {semi['field']}",
-                "time": semi["time"],
+                "game": semi["game"],
+                "team1": {
+                    "seed": semi["higher_seed_label"],
+                    "name": semi["higher_team"],
+                },
+                "team2": {
+                    "seed": semi["lower_seed_label"],
+                    "name": semi["lower_team"],
+                },
+                "date": semi.get("date", ""),
+                "time": semi.get("time", ""),
+                "location": semi.get("location", ""),
             },
         }
 
         if final:
             bracket["final"] = {
-                "game": final["fgame"],
-                "from": [final["team1"] or "Winner Semi", final["team2"] or "Winner other Semi"],
-                "location": f"{final['location']} {final['field']}",
-                "time": final["time"],
+                "game": final["game"],
+                "team1": {
+                    "seed": final["higher_seed_label"],
+                    "name": final["higher_team"],
+                },
+                "team2": {
+                    "seed": final["lower_seed_label"],
+                    "name": final["lower_team"],
+                },
+                "date": final.get("date", ""),
+                "time": final.get("time", ""),
+                "location": final.get("location", ""),
             }
         else:
             bracket["final"] = {
                 "game": "",
-                "from": ["TBD", "TBD"],
-                "location": "",
+                "team1": {"seed": "", "name": ""},
+                "team2": {"seed": "", "name": ""},
+                "date": "",
                 "time": "",
+                "location": "",
             }
 
         brackets[division] = bracket
 
+    # ---------------------------------------------------------
+    # 3. Divisions where HOLA appears ONLY in finals
+    # ---------------------------------------------------------
     for division, finals in finals_by_div.items():
         if division in brackets:
             continue
-        hola_in_final = any("HOLA" in (f["team1"] + f["team2"]) for f in finals)
+
+        hola_in_final = any(
+            "HOLA" in f["higher_team"] or "HOLA" in f["lower_team"]
+            for f in finals
+        )
         if not hola_in_final:
             continue
+
         final = finals[0]
 
         bracket = {
@@ -346,27 +407,37 @@ def build_brackets(qtr_data, semi_data, final_data):
                 "game": "",
                 "team1": {"seed": "", "name": ""},
                 "team2": {"seed": "", "name": ""},
-                "location": "",
+                "date": "",
                 "time": "",
+                "location": "",
             },
             "semifinal": {
                 "game": "",
-                "from": ["TBD", "TBD"],
-                "location": "",
+                "team1": {"seed": "", "name": ""},
+                "team2": {"seed": "", "name": ""},
+                "date": "",
                 "time": "",
+                "location": "",
             },
             "final": {
-                "game": final["fgame"],
-                "from": [final["team1"], final["team2"]],
-                "location": f"{final['location']} {final['field']}",
-                "time": final["time"],
+                "game": final["game"],
+                "team1": {
+                    "seed": final["higher_seed_label"],
+                    "name": final["higher_team"],
+                },
+                "team2": {
+                    "seed": final["lower_seed_label"],
+                    "name": final["lower_team"],
+                },
+                "date": final.get("date", ""),
+                "time": final.get("time", ""),
+                "location": final.get("location", ""),
             },
         }
 
         brackets[division] = bracket
 
     return brackets
-
 
 def write_json(brackets):
     DOCS_DIR.mkdir(exist_ok=True)
