@@ -21,7 +21,7 @@ def load_sheets():
 
 
 
-                def parse_qtr_finals(df):
+def parse_qtr_finals(df):
     rows = df.fillna("").astype(str).values.tolist()
     results = []
     i = 0
