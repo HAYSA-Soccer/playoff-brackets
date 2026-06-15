@@ -489,6 +489,9 @@ def write_html():
         const wrapper = document.createElement('div');
         wrapper.className = 'bracket-grid';
 
+        //
+        // QUARTERFINAL
+        //
         const q = document.createElement('div');
         q.className = 'round round-q';
         if (bracket.quarterfinal.game) {
@@ -500,14 +503,17 @@ def write_html():
                 <div>${bracket.quarterfinal.team2.seed} ${bracket.quarterfinal.team2.name}</div>
               </div>
               <div class="meta">
-                <span>📍 ${bracket.quarterfinal.location}</span>
-                <span>🕒 ${bracket.quarterfinal.time}</span>
+                <span>📍 ${bracket.quarterfinal.location || "—"}</span>
+                <span>🕒 ${bracket.quarterfinal.time || "—"}</span>
               </div>
             </div>
           `;
         }
         wrapper.appendChild(q);
 
+        //
+        // SEMIFINAL
+        //
         const s = document.createElement('div');
         s.className = 'round round-s';
         if (bracket.semifinal.game) {
@@ -515,18 +521,21 @@ def write_html():
             <div class="match">
               <div class="game-label">${bracket.semifinal.game} • Semifinal</div>
               <div class="teams">
-                <div>${bracket.semifinal.from[0]}</div>
-                <div>${bracket.semifinal.from[1]}</div>
+                <div>${bracket.semifinal.team1.seed} ${bracket.semifinal.team1.name}</div>
+                <div>${bracket.semifinal.team2.seed} ${bracket.semifinal.team2.name}</div>
               </div>
               <div class="meta">
-                <span>📍 ${bracket.semifinal.location}</span>
-                <span>🕒 ${bracket.semifinal.time}</span>
+                <span>📍 ${bracket.semifinal.location || "—"}</span>
+                <span>🕒 ${bracket.semifinal.time || "—"}</span>
               </div>
             </div>
           `;
         }
         wrapper.appendChild(s);
 
+        //
+        // FINAL
+        //
         const f = document.createElement('div');
         f.className = 'round round-f';
         if (bracket.final.game) {
@@ -534,12 +543,12 @@ def write_html():
             <div class="match match-final">
               <div class="game-label">${bracket.final.game} • Final</div>
               <div class="teams">
-                <div>${bracket.final.from[0]}</div>
-                <div>${bracket.final.from[1]}</div>
+                <div>${bracket.final.team1.seed} ${bracket.final.team1.name}</div>
+                <div>${bracket.final.team2.seed} ${bracket.final.team2.name}</div>
               </div>
               <div class="meta">
-                <span>📍 ${bracket.final.location}</span>
-                <span>🕒 ${bracket.final.time}</span>
+                <span>📍 ${bracket.final.location || "—"}</span>
+                <span>🕒 ${bracket.final.time || "—"}</span>
               </div>
             </div>
           `;
