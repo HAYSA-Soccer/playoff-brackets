@@ -151,7 +151,6 @@ def parse_finals(df):
     rows = df.fillna("").astype(str).values.tolist()
     results = []
 
-    seed_pattern = re.compile(r"\d+(st|nd|rd|th)$", re.IGNORECASE)
     fgame_pattern = re.compile(r"F\d+", re.IGNORECASE)
 
     START_ROW = 6
@@ -165,8 +164,9 @@ def parse_finals(df):
         row_seed_bottom = rows[i + 4]
         row_location = rows[i + 5]
 
-        col = 0  # ALWAYS use first 3 columns
+        col = 0  # finals bracket always in first 3 columns
 
+        # Detect F#
         f_cell = row_seed_top[col + 1].strip()
         if not fgame_pattern.match(f_cell):
             i += 1
@@ -174,24 +174,25 @@ def parse_finals(df):
 
         fgame = f_cell
 
-        higher_seed = row_seed_top[col].strip()
+        # Extract seeds & teams
         higher_team = row_team_top[col].strip()
-        lower_seed = row_seed_bottom[col].strip()
-        lower_team = row_team_bottom[col].strip()
+        higher_seed = row_seed_top[col].strip()
 
+        lower_team = row_team_bottom[col].strip()
+        lower_seed = row_seed_bottom[col].strip()
+
+        # Extract date/time/location
         date = row_team_top[col + 1].strip()
         time = row_team_bottom[col + 1].strip()
         location = row_location[col].strip()
 
-        if not seed_pattern.search(higher_seed) or not seed_pattern.search(lower_seed):
-            i += 1
-            continue
-
+        # Extract division from seed label
         division = re.sub(r"\s*\d+(st|nd|rd|th)$", "", higher_seed, flags=re.IGNORECASE)
         division = division.replace(" ", "")
 
         results.append({
             "division": division,
+            "cup_name": row_cup[col].strip(),
             "higher_seed_label": higher_seed,
             "higher_team": higher_team,
             "lower_seed_label": lower_seed,
@@ -202,10 +203,9 @@ def parse_finals(df):
             "location": location,
         })
 
-        i += 6
+        i += 6  # move to next finals block
 
     return results
-
 
 
 
