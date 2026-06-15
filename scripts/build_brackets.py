@@ -8,7 +8,7 @@ DOCS_DIR = Path("docs")
 def load_sheets():
     xls = pd.ExcelFile(DATA_PATH)
     qtr = pd.read_excel(xls, "QTR Finals")
-    semis = pd.read_excel(xls, "Semi-Finals")
+    semis = pd.read_excel(xls, "Semi Finals")   # ← no hyphen
     finals = pd.read_excel(xls, "Finals")
     return qtr, semis, finals
 
