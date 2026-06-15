@@ -71,6 +71,7 @@ def parse_qtr_finals(df):
 
 
 
+
 def parse_semi_finals(df):
     rows = df.fillna("").astype(str).values.tolist()
     results = []
