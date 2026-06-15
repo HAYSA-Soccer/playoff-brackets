@@ -6,7 +6,7 @@ import re
 DATA_PATH = Path("data/2026_Playoff_Schedule_Final.xlsx")
 DOCS_DIR = Path("docs")
 
-# Your HOLA divisions
+# HOLA divisions (canonical)
 HOLA_DIVISIONS = {"B6.4", "G6.2", "B6.2", "B8.2", "G8.2", "B10.2", "BPG.1"}
 
 QGAME_PATTERN = re.compile(r"Q(\d+)", re.IGNORECASE)
@@ -14,12 +14,50 @@ SGAME_PATTERN = re.compile(r"SF(\d+)", re.IGNORECASE)
 FGAME_PATTERN = re.compile(r"F(\d+)", re.IGNORECASE)
 
 
+# -----------------------------
+#  DIVISION NORMALIZATION
+# -----------------------------
+def normalize_division(label):
+    if not label:
+        return ""
+
+    s = label.replace(" ", "").lower()
+
+    # Boys
+    m = re.match(r"b(\d+\.\d+)", s)
+    if m:
+        return f"B{m.group(1)}"
+
+    # Girls
+    m = re.match(r"g(\d+\.\d+)", s)
+    if m:
+        return f"G{m.group(1)}"
+
+    # Formats like "8.2boys" or "8.2girls"
+    m = re.match(r"(\d+\.\d+)(boys|girls)", s)
+    if m:
+        prefix = "B" if m.group(2) == "boys" else "G"
+        return f"{prefix}{m.group(1)}"
+
+    # PG divisions
+    if "pg" in s:
+        m = re.match(r"(b|g)pg\.?(\d*)", s)
+        if m:
+            return f"{m.group(1).upper()}PG.{m.group(2) or '1'}"
+
+    return label.upper()
+
+
+# -----------------------------
+#  LOAD SHEETS
+# -----------------------------
 def load_sheets():
     xls = pd.ExcelFile(DATA_PATH)
-    qtr = pd.read_excel(xls, "QTR Finals")
-    semis = pd.read_excel(xls, "Semi Finals")
-    finals = pd.read_excel(xls, "Finals")
-    return qtr, semis, finals
+    return (
+        pd.read_excel(xls, "QTR Finals"),
+        pd.read_excel(xls, "Semi Finals"),
+        pd.read_excel(xls, "Finals"),
+    )
 
 
 # -----------------------------
@@ -35,7 +73,6 @@ def parse_qtr_finals(df):
     for i in range(START_ROW, len(rows) - 4):
         row_q = rows[i]
 
-        # Detect Q-game in row
         if not any(QGAME_PATTERN.match(cell.strip()) for cell in row_q):
             continue
 
@@ -64,8 +101,8 @@ def parse_qtr_finals(df):
             if not seed_pattern.search(seed_bottom):
                 continue
 
-            division = re.sub(r"\s*\d+(st|nd|rd|th)$", "", seed_top, flags=re.IGNORECASE)
-            division = division.replace(" ", "")
+            raw_div = re.sub(r"\s*\d+(st|nd|rd|th)$", "", seed_top, flags=re.IGNORECASE)
+            division = normalize_division(raw_div)
 
             results.append({
                 "division": division,
@@ -74,6 +111,7 @@ def parse_qtr_finals(df):
                 "lower_seed_label": seed_bottom,
                 "lower_team": team_bottom,
                 "qgame": qgame,
+                "qnum": QGAME_PATTERN.match(qgame).group(1),
                 "date": date,
                 "time": time,
                 "location": location,
@@ -83,7 +121,7 @@ def parse_qtr_finals(df):
 
 
 # -----------------------------
-#  SEMIFINAL PARSER (5-row blocks)
+#  SEMIFINAL PARSER
 # -----------------------------
 def parse_semi_finals(df):
     rows = df.fillna("").astype(str).values.tolist()
@@ -93,13 +131,13 @@ def parse_semi_finals(df):
     i = START_ROW
 
     while i < len(rows) - 4:
-        row_seed_top = rows[i]        # Row 6
-        row_team_top = rows[i + 1]    # Row 7
-        row_seed_bottom = rows[i + 2] # Row 8
-        row_team_bottom = rows[i + 3] # Row 9
-        row_location = rows[i + 4]    # Row 10
+        row_seed_top = rows[i]
+        row_team_top = rows[i + 1]
+        row_seed_bottom = rows[i + 2]
+        row_team_bottom = rows[i + 3]
+        row_location = rows[i + 4]
 
-        col = 1  # Bracket always starts in column B
+        col = 1
 
         sf_cell = row_seed_bottom[col + 1].strip()
         m = SGAME_PATTERN.match(sf_cell)
@@ -107,7 +145,6 @@ def parse_semi_finals(df):
             i += 1
             continue
 
-        sf_game = sf_cell
         sf_num = m.group(1)
 
         higher_seed = row_seed_top[col].strip()
@@ -120,8 +157,8 @@ def parse_semi_finals(df):
         time = row_team_bottom[col + 1].strip()
         location = row_location[col].strip()
 
-        division = re.sub(r"\s*\d+(st|nd|rd|th)$", "", higher_seed, flags=re.IGNORECASE)
-        division = division.replace(" ", "")
+        raw_div = re.sub(r"\s*\d+(st|nd|rd|th)$", "", higher_seed, flags=re.IGNORECASE)
+        division = normalize_division(raw_div)
 
         results.append({
             "division": division,
@@ -129,7 +166,6 @@ def parse_semi_finals(df):
             "higher_team": higher_team,
             "lower_seed_label": lower_seed,
             "lower_team": lower_team,
-            "game": sf_game,
             "sf_num": sf_num,
             "date": date,
             "time": time,
@@ -167,7 +203,6 @@ def parse_finals(df):
             i += 1
             continue
 
-        fgame = f_cell
         f_num = m.group(1)
 
         higher_team = row_team_top[col].strip()
@@ -180,8 +215,8 @@ def parse_finals(df):
         time = row_team_bottom[col + 1].strip()
         location = row_location[col].strip()
 
-        division = re.sub(r"\s*\d+(st|nd|rd|th)$", "", higher_seed, flags=re.IGNORECASE)
-        division = division.replace(" ", "")
+        raw_div = re.sub(r"\s*\d+(st|nd|rd|th)$", "", higher_seed, flags=re.IGNORECASE)
+        division = normalize_division(raw_div)
 
         results.append({
             "division": division,
@@ -190,7 +225,6 @@ def parse_finals(df):
             "higher_team": higher_team,
             "lower_seed_label": lower_seed,
             "lower_team": lower_team,
-            "game": fgame,
             "f_num": f_num,
             "date": date,
             "time": time,
@@ -221,100 +255,108 @@ def build_brackets(qtr_data, semi_data, final_data):
         finals_by_div.setdefault(f["division"], []).append(f)
 
     for division in HOLA_DIVISIONS:
+        bracket = {}
+
         qgames = qtrs_by_div.get(division, [])
         semis = semis_by_div.get(division, [])
         finals = finals_by_div.get(division, [])
 
-        bracket = {}
-
         # -------------------------
-        # QUARTERFINAL
+        # QUARTERFINAL (only if exists)
         # -------------------------
         if qgames:
             q = qgames[0]
-            q_num = QGAME_PATTERN.match(q["qgame"]).group(1)
-
             bracket["quarterfinal"] = {
-                "game": q["qgame"],
-                "team1": {"seed": q["higher_seed_label"], "name": q["higher_team"]},
-                "team2": {"seed": q["lower_seed_label"], "name": q["lower_team"]},
+                "exists": True,
+                "team1": q["higher_team"],
+                "team2": q["lower_team"],
+                "seed1": q["higher_seed_label"],
+                "seed2": q["lower_seed_label"],
+                "game": f"Quarterfinal Game #{q['qnum']}",
                 "date": q["date"],
                 "time": q["time"],
                 "location": q["location"],
-                "status": "highlight" if "HOLA" in q["higher_team"] or "HOLA" in q["lower_team"] else "dim",
+                "highlight": ("HOLA" in q["higher_team"] or "HOLA" in q["lower_team"]),
             }
         else:
-            bracket["quarterfinal"] = {
-                "game": "",
-                "team1": {"seed": "", "name": f"Winner of Quarterfinal Game 11"},
-                "team2": {"seed": "", "name": f"Winner of Quarterfinal Game 12"},
-                "date": "",
-                "time": "",
-                "location": "",
-                "status": "dim",
-            }
+            bracket["quarterfinal"] = {"exists": False}
 
         # -------------------------
-        # SEMIFINAL
+        # SEMIFINAL (only if exists)
         # -------------------------
         if semis:
             s = semis[0]
-            sf_num = s["sf_num"]
 
-            t1 = s["higher_team"] or f"Winner of Quarterfinal Game {sf_num}"
-            t2 = s["lower_team"] or f"Winner of Quarterfinal Game {sf_num}"
+            # Determine semifinal team names
+            if s["higher_team"]:
+                t1 = s["higher_team"]
+            else:
+                if qgames:
+                    t1 = f"Winner of Quarterfinal Game #{qgames[0]['qnum']}"
+                else:
+                    t1 = ""
+
+            if s["lower_team"]:
+                t2 = s["lower_team"]
+            else:
+                if qgames:
+                    t2 = f"Winner of Quarterfinal Game #{qgames[0]['qnum']}"
+                else:
+                    t2 = ""
 
             bracket["semifinal"] = {
-                "game": s["game"],
-                "team1": {"seed": s["higher_seed_label"], "name": t1},
-                "team2": {"seed": s["lower_seed_label"], "name": t2},
+                "exists": True,
+                "team1": t1,
+                "team2": t2,
+                "seed1": s["higher_seed_label"],
+                "seed2": s["lower_seed_label"],
+                "game": f"Semifinal Game #{s['sf_num']}",
                 "date": s["date"],
                 "time": s["time"],
                 "location": s["location"],
-                "status": "highlight" if "HOLA" in t1 or "HOLA" in t2 else "dim",
+                "highlight": ("HOLA" in t1 or "HOLA" in t2),
             }
         else:
-            bracket["semifinal"] = {
-                "game": "",
-                "team1": {"seed": "", "name": "Winner of Quarterfinal Game 11"},
-                "team2": {"seed": "", "name": "Winner of Quarterfinal Game 12"},
-                "date": "",
-                "time": "",
-                "location": "",
-                "status": "dim",
-            }
+            bracket["semifinal"] = {"exists": False}
 
         # -------------------------
-        # FINAL
+        # FINAL (only if exists)
         # -------------------------
         if finals:
             f = finals[0]
-            f_num = f["f_num"]
 
-            t1 = f["higher_team"] or f"Winner of Semifinal Game {f_num}"
-            t2 = f["lower_team"] or f"Winner of Semifinal Game {f_num}"
+            # Determine final team names
+            if f["higher_team"]:
+                t1 = f["higher_team"]
+            else:
+                if semis:
+                    t1 = f"Winner of Semifinal Game #{semis[0]['sf_num']}"
+                else:
+                    t1 = ""
+
+            if f["lower_team"]:
+                t2 = f["lower_team"]
+            else:
+                if semis:
+                    t2 = f"Winner of Semifinal Game #{semis[0]['sf_num']}"
+                else:
+                    t2 = ""
 
             bracket["final"] = {
-                "game": f["game"],
-                "team1": {"seed": f["higher_seed_label"], "name": t1},
-                "team2": {"seed": f["lower_seed_label"], "name": t2},
+                "exists": True,
+                "team1": t1,
+                "team2": t2,
+                "seed1": f["higher_seed_label"],
+                "seed2": f["lower_seed_label"],
+                "game": f"Final Game #{f['f_num']}",
+                "cup_name": f["cup_name"],
                 "date": f["date"],
                 "time": f["time"],
                 "location": f["location"],
-                "cup_name": f["cup_name"],
-                "status": "highlight" if "HOLA" in t1 or "HOLA" in t2 else "dim",
+                "highlight": ("HOLA" in t1 or "HOLA" in t2),
             }
         else:
-            bracket["final"] = {
-                "game": "",
-                "team1": {"seed": "", "name": "Winner of Semifinal Game 11"},
-                "team2": {"seed": "", "name": "Winner of Semifinal Game 12"},
-                "date": "",
-                "time": "",
-                "location": "",
-                "cup_name": "",
-                "status": "dim",
-            }
+            bracket["final"] = {"exists": False}
 
         brackets[division] = bracket
 
@@ -338,7 +380,7 @@ def write_html():
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>HOLA Playoff Brackets</title>
+  <title>HOLA Playoff Brackets 2026</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -349,11 +391,13 @@ def write_html():
   <main id="brackets"></main>
 
   <script>
-    function getMetaClass(dateStr, timeStr) {
-      if (!dateStr || !timeStr) return "meta-past";
+    function getMetaClass(round) {
+      if (!round.highlight) return "meta-dim";
 
-      const dt = new Date(dateStr + " " + timeStr);
-      if (isNaN(dt.getTime())) return "meta-past";
+      if (!round.date || !round.time) return "meta-dim";
+
+      const dt = new Date(round.date + " " + round.time);
+      if (isNaN(dt.getTime())) return "meta-dim";
 
       const now = new Date();
 
@@ -384,17 +428,19 @@ def write_html():
         wrapper.className = 'bracket-grid';
 
         function renderRound(round, label) {
+          if (!round.exists) return null;
+
           const r = document.createElement('div');
           r.className = 'round';
 
-          const metaClass = getMetaClass(round.date, round.time);
+          const metaClass = getMetaClass(round);
 
-          const t1 = round.team1.name || round.team1.seed;
-          const t2 = round.team2.name || round.team2.seed;
+          const t1 = round.team1 || "";
+          const t2 = round.team2 || "";
 
           r.innerHTML = `
-            <div class="match ${round.status}">
-              <div class="game-label">${round.game || label}</div>
+            <div class="match ${round.highlight ? "highlight" : "dim"}">
+              <div class="game-label">${round.game}</div>
               <div class="teams">
                 <div>${t1}</div>
                 <div>${t2}</div>
@@ -408,9 +454,13 @@ def write_html():
           return r;
         }
 
-        wrapper.appendChild(renderRound(bracket.quarterfinal, "Quarterfinal"));
-        wrapper.appendChild(renderRound(bracket.semifinal, "Semifinal"));
-        wrapper.appendChild(renderRound(bracket.final, "Final"));
+        const q = renderRound(bracket.quarterfinal, "Quarterfinal");
+        const s = renderRound(bracket.semifinal, "Semifinal");
+        const f = renderRound(bracket.final, "Final");
+
+        if (q) wrapper.appendChild(q);
+        if (s) wrapper.appendChild(s);
+        if (f) wrapper.appendChild(f);
 
         section.appendChild(wrapper);
         container.appendChild(section);
@@ -493,6 +543,11 @@ main {
   color: #777;
   opacity: 0.7;
 }
+
+.meta-dim {
+  color: #555;
+  opacity: 0.5;
+}
 """
     with open(DOCS_DIR / "style.css", "w", encoding="utf-8") as f:
         f.write(css)
@@ -515,5 +570,3 @@ def main():
     write_css()
 
 
-if __name__ == "__main__":
-    main()
