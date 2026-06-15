@@ -104,7 +104,7 @@ def parse_semi_finals(df):
         row_team_bottom = rows[i + 3]
         row_location = rows[i + 4]
 
-        col = 0  # bracket always in first 3 columns
+        col = 0  # semis always in first 3 columns
 
         # Detect SF#
         sf_cell = row_sf[col + 1].strip()
@@ -126,7 +126,7 @@ def parse_semi_finals(df):
         time = row_team_bottom[col + 1].strip()
         location = row_location[col].strip()
 
-        # Division = everything before the seed number
+        # Extract division
         division = re.sub(r"\s*\d+(st|nd|rd|th)$", "", higher_seed, flags=re.IGNORECASE)
         division = division.replace(" ", "")
 
@@ -142,9 +142,11 @@ def parse_semi_finals(df):
             "location": location,
         })
 
-        i += 5  # next block
+        i += 5  # next semifinal block
 
     return results
+
+
 
 
 def parse_finals(df):
