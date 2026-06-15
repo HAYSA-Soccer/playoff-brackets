@@ -27,62 +27,64 @@
         title.textContent = division;
         section.appendChild(title);
 
-        // Build visual bracket layout
         const wrapper = document.createElement('div');
         wrapper.className = 'bracket-grid';
 
-        // Quarterfinal
         const q = document.createElement('div');
         q.className = 'round round-q';
-        q.innerHTML = `
-          <div class="match match-hola">
-            <div class="game-label">${bracket.quarterfinal.game} • Quarterfinal</div>
-            <div class="teams">
-              <div>${bracket.quarterfinal.team1.seed} ${bracket.quarterfinal.team1.name}</div>
-              <div>${bracket.quarterfinal.team2.seed} ${bracket.quarterfinal.team2.name}</div>
+        if (bracket.quarterfinal.game) {
+          q.innerHTML = `
+            <div class="match match-hola">
+              <div class="game-label">${bracket.quarterfinal.game} • Quarterfinal</div>
+              <div class="teams">
+                <div>${bracket.quarterfinal.team1.seed} ${bracket.quarterfinal.team1.name}</div>
+                <div>${bracket.quarterfinal.team2.seed} ${bracket.quarterfinal.team2.name}</div>
+              </div>
+              <div class="meta">
+                <span>📍 ${bracket.quarterfinal.location}</span>
+                <span>🕒 ${bracket.quarterfinal.time}</span>
+              </div>
             </div>
-            <div class="meta">
-              <span>📍 ${bracket.quarterfinal.location}</span>
-              <span>🕒 ${bracket.quarterfinal.time}</span>
-            </div>
-          </div>
-        `;
+          `;
+        }
         wrapper.appendChild(q);
 
-        // Semifinal
         const s = document.createElement('div');
         s.className = 'round round-s';
-        s.innerHTML = `
-          <div class="match">
-            <div class="game-label">${bracket.semifinal.game} • Semifinal</div>
-            <div class="teams">
-              <div>${bracket.semifinal.from[0]}</div>
-              <div>${bracket.semifinal.from[1]}</div>
+        if (bracket.semifinal.game) {
+          s.innerHTML = `
+            <div class="match">
+              <div class="game-label">${bracket.semifinal.game} • Semifinal</div>
+              <div class="teams">
+                <div>${bracket.semifinal.from[0]}</div>
+                <div>${bracket.semifinal.from[1]}</div>
+              </div>
+              <div class="meta">
+                <span>📍 ${bracket.semifinal.location}</span>
+                <span>🕒 ${bracket.semifinal.time}</span>
+              </div>
             </div>
-            <div class="meta">
-              <span>📍 ${bracket.semifinal.location}</span>
-              <span>🕒 ${bracket.semifinal.time}</span>
-            </div>
-          </div>
-        `;
+          `;
+        }
         wrapper.appendChild(s);
 
-        // Final
         const f = document.createElement('div');
         f.className = 'round round-f';
-        f.innerHTML = `
-          <div class="match match-final">
-            <div class="game-label">${bracket.final.game} • Final</div>
-            <div class="teams">
-              <div>${bracket.final.from[0]}</div>
-              <div>${bracket.final.from[1]}</div>
+        if (bracket.final.game) {
+          f.innerHTML = `
+            <div class="match match-final">
+              <div class="game-label">${bracket.final.game} • Final</div>
+              <div class="teams">
+                <div>${bracket.final.from[0]}</div>
+                <div>${bracket.final.from[1]}</div>
+              </div>
+              <div class="meta">
+                <span>📍 ${bracket.final.location}</span>
+                <span>🕒 ${bracket.final.time}</span>
+              </div>
             </div>
-            <div class="meta">
-              <span>📍 ${bracket.final.location}</span>
-              <span>🕒 ${bracket.final.time}</span>
-            </div>
-          </div>
-        `;
+          `;
+        }
         wrapper.appendChild(f);
 
         section.appendChild(wrapper);
