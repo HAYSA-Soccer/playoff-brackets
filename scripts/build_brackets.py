@@ -92,7 +92,6 @@ def parse_semi_finals(df):
     rows = df.fillna("").astype(str).values.tolist()
     results = []
 
-    seed_pattern = re.compile(r"\d+(st|nd|rd|th)$", re.IGNORECASE)
     sf_pattern = re.compile(r"SF\d+", re.IGNORECASE)
 
     START_ROW = 6
@@ -105,29 +104,29 @@ def parse_semi_finals(df):
         row_team_bottom = rows[i + 3]
         row_location = rows[i + 4]
 
-        # ALWAYS use first 3 columns
-        col = 0
+        col = 0  # bracket always in first 3 columns
 
-        sf_cell = row_sf[col + 1].strip() if col + 1 < len(row_sf) else ""
+        # Detect SF#
+        sf_cell = row_sf[col + 1].strip()
         if not sf_pattern.match(sf_cell):
             i += 1
             continue
 
         sf_game = sf_cell
 
+        # Extract seeds & teams
         higher_seed = row_seed_top[col].strip()
         higher_team = row_team_top[col].strip()
-        lower_seed = row_sf[col].strip()
-        lower_team = row_team_bottom[col].strip()
 
+        lower_seed = row_sf[col].strip()
+        lower_team = row_team_bottom[col].strip()  # may be blank
+
+        # Extract date/time/location
         date = row_team_top[col + 1].strip()
         time = row_team_bottom[col + 1].strip()
         location = row_location[col].strip()
 
-        if not seed_pattern.search(higher_seed) or not seed_pattern.search(lower_seed):
-            i += 1
-            continue
-
+        # Division = everything before the seed number
         division = re.sub(r"\s*\d+(st|nd|rd|th)$", "", higher_seed, flags=re.IGNORECASE)
         division = division.replace(" ", "")
 
@@ -143,7 +142,7 @@ def parse_semi_finals(df):
             "location": location,
         })
 
-        i += 5
+        i += 5  # next block
 
     return results
 
