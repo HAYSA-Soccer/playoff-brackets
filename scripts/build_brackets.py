@@ -23,18 +23,18 @@ def load_sheets():
 def parse_qtr_finals(df):
     rows = df.fillna("").astype(str).values.tolist()
     results = []
-    current_division = None
     i = 0
 
     while i < len(rows):
         row = rows[i]
+        label = row[0].strip()
 
-        # division header
-        if any(k in row[0] for k in ["boys", "girls", "B6", "G6", "PG"]):
-            current_division = row[0].strip()
+        # seed line like "8.2 boys 3rd"
+        m = SEED_PATTERN.search(label)
+        if m:
+            # division is everything before the seed rank
+            division = m.group(1).strip()  # e.g. "8.2 boys"
 
-        # seed line
-        if SEED_PATTERN.search(row[0]):
             if i + 3 >= len(rows):
                 i += 1
                 continue
@@ -54,7 +54,7 @@ def parse_qtr_finals(df):
 
             if qgame:
                 results.append({
-                    "division": current_division,
+                    "division": division,
                     "higher_seed_label": higher_seed_label,
                     "higher_team": higher_team,
                     "lower_seed_label": lower_seed_label,
@@ -68,6 +68,7 @@ def parse_qtr_finals(df):
         i += 1
 
     return results
+
 
 
 def parse_semi_finals(df):
