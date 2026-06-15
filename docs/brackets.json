@@ -10,26 +10,37 @@
         "seed": "8.2 boys 6th",
         "name": "HOLA (Luyo)"
       },
-      "location": "Bridgewater F?",
-      "time": ""
+      "date": "",
+      "time": "",
+      "location": ""
     },
     "semifinal": {
       "game": "",
-      "from": [
-        "TBD",
-        "TBD"
-      ],
-      "location": "",
-      "time": ""
+      "team1": {
+        "seed": "",
+        "name": ""
+      },
+      "team2": {
+        "seed": "",
+        "name": ""
+      },
+      "date": "",
+      "time": "",
+      "location": ""
     },
     "final": {
       "game": "",
-      "from": [
-        "TBD",
-        "TBD"
-      ],
-      "location": "",
-      "time": ""
+      "team1": {
+        "seed": "",
+        "name": ""
+      },
+      "team2": {
+        "seed": "",
+        "name": ""
+      },
+      "date": "",
+      "time": "",
+      "location": ""
     }
   },
   "6.2girls": {
@@ -43,26 +54,37 @@
         "seed": "6.2 girls 5th",
         "name": "BRA (Wilson)"
       },
-      "location": "Bridgewater F?",
-      "time": ""
+      "date": "",
+      "time": "",
+      "location": ""
     },
     "semifinal": {
       "game": "",
-      "from": [
-        "TBD",
-        "TBD"
-      ],
-      "location": "",
-      "time": ""
+      "team1": {
+        "seed": "",
+        "name": ""
+      },
+      "team2": {
+        "seed": "",
+        "name": ""
+      },
+      "date": "",
+      "time": "",
+      "location": ""
     },
     "final": {
       "game": "",
-      "from": [
-        "TBD",
-        "TBD"
-      ],
-      "location": "",
-      "time": ""
+      "team1": {
+        "seed": "",
+        "name": ""
+      },
+      "team2": {
+        "seed": "",
+        "name": ""
+      },
+      "date": "",
+      "time": "",
+      "location": ""
     }
   },
   "B6.4": {
@@ -76,26 +98,37 @@
         "seed": "B 6.4 5th",
         "name": "BRG1(Duggan)"
       },
-      "location": "Bridgewater F?",
-      "time": ""
+      "date": "",
+      "time": "",
+      "location": ""
     },
     "semifinal": {
       "game": "",
-      "from": [
-        "TBD",
-        "TBD"
-      ],
-      "location": "",
-      "time": ""
+      "team1": {
+        "seed": "",
+        "name": ""
+      },
+      "team2": {
+        "seed": "",
+        "name": ""
+      },
+      "date": "",
+      "time": "",
+      "location": ""
     },
     "final": {
       "game": "",
-      "from": [
-        "TBD",
-        "TBD"
-      ],
-      "location": "",
-      "time": ""
+      "team1": {
+        "seed": "",
+        "name": ""
+      },
+      "team2": {
+        "seed": "",
+        "name": ""
+      },
+      "date": "",
+      "time": "",
+      "location": ""
     }
   }
 }
