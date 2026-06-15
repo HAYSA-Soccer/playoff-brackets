@@ -30,7 +30,7 @@ def parse_qtr_finals(df):
 
     START_ROW = 6  # QTR data begins on row 6
 
-    for i in range(START_ROW, len(rows) - 2):
+    for i in range(START_ROW, len(rows) - 4):
         row_q = rows[i]
 
         # Detect QTR row (Row C)
@@ -38,9 +38,10 @@ def parse_qtr_finals(df):
             continue
 
         # Identify the surrounding rows
-        row_top_seed = rows[i - 2]      # Row A
-        row_top_team = rows[i - 1]      # Row B
-        row_bottom_team = rows[i + 1]   # Row D
+        row_top_seed = rows[i - 2]        # Row A
+        row_top_team = rows[i - 1]        # Row B
+        row_bottom_team = rows[i + 1]     # Row D
+        row_location = rows[i + 2]        # Row E
 
         # Scan across columns in groups of 3
         for col in range(0, len(row_q), 3):
@@ -54,11 +55,18 @@ def parse_qtr_finals(df):
             team_top = row_top_team[col].strip() if col < len(row_top_team) else ""
             team_bottom = row_bottom_team[col].strip() if col < len(row_bottom_team) else ""
 
+            # NEW: date/time/location
+            date = row_top_team[col + 1].strip() if col + 1 < len(row_top_team) else ""
+            time = row_bottom_team[col + 1].strip() if col + 1 < len(row_bottom_team) else ""
+            location = row_location[col].strip() if col < len(row_location) else ""
+
+            # Validate seeds
             if not seed_pattern.search(seed_top):
                 continue
             if not seed_pattern.search(seed_bottom):
                 continue
 
+            # Extract division name
             division = re.sub(r"\s*\d+(st|nd|rd|th)$", "", seed_top, flags=re.IGNORECASE)
             division = division.replace(" ", "")
 
@@ -69,6 +77,9 @@ def parse_qtr_finals(df):
                 "lower_seed_label": seed_bottom,
                 "lower_team": team_bottom,
                 "qgame": qgame,
+                "date": date,
+                "time": time,
+                "location": location,
             })
 
     return results
