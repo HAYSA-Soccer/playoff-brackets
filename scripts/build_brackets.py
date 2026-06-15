@@ -2,7 +2,7 @@ import pandas as pd
 from pathlib import Path
 import json
 
-DATA_PATH = Path("data/2026_playoffs.xlsx")
+DATA_PATH = Path("data/2026_Playoff_Schedule_Final.xlsx")
 DOCS_DIR = Path("docs")
 
 def load_sheets():
