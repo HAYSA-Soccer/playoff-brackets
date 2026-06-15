@@ -6,10 +6,12 @@ import re
 DATA_PATH = Path("data/2026_Playoff_Schedule_Final.xlsx")
 DOCS_DIR = Path("docs")
 
-SEED_PATTERN = re.compile(r"(.*)\s(\d+)(st|nd|rd|th)$")
-QGAME_PATTERN = re.compile(r"^Q\d+$")
-SGAME_PATTERN = re.compile(r"^S\d+$")
-FGAME_PATTERN = re.compile(r"^F\d+$")
+# Your HOLA divisions
+HOLA_DIVISIONS = {"B6.4", "G6.2", "B6.2", "B8.2", "G8.2", "B10.2", "BPG.1"}
+
+QGAME_PATTERN = re.compile(r"Q(\d+)", re.IGNORECASE)
+SGAME_PATTERN = re.compile(r"SF(\d+)", re.IGNORECASE)
+FGAME_PATTERN = re.compile(r"F(\d+)", re.IGNORECASE)
 
 
 def load_sheets():
@@ -20,52 +22,48 @@ def load_sheets():
     return qtr, semis, finals
 
 
+# -----------------------------
+#  QUARTERFINAL PARSER
+# -----------------------------
 def parse_qtr_finals(df):
     rows = df.fillna("").astype(str).values.tolist()
     results = []
 
     seed_pattern = re.compile(r"\d+(st|nd|rd|th)$", re.IGNORECASE)
-    qgame_pattern = re.compile(r"Q\d+", re.IGNORECASE)
 
-    START_ROW = 6  # QTR data begins on row 6
-
+    START_ROW = 6
     for i in range(START_ROW, len(rows) - 4):
         row_q = rows[i]
 
-        # Detect QTR row (Row C)
-        if not any(qgame_pattern.match(cell.strip()) for cell in row_q):
+        # Detect Q-game in row
+        if not any(QGAME_PATTERN.match(cell.strip()) for cell in row_q):
             continue
 
-        # Surrounding rows
-        row_top_seed = rows[i - 2]        # Row A
-        row_top_team = rows[i - 1]        # Row B
-        row_bottom_team = rows[i + 1]     # Row D
-        row_location = rows[i + 2]        # Row E
+        row_seed_top = rows[i - 2]
+        row_team_top = rows[i - 1]
+        row_team_bottom = rows[i + 1]
+        row_location = rows[i + 2]
 
-        # Scan across columns in groups of 3
         for col in range(0, len(row_q), 3):
             seed_bottom = row_q[col].strip()
             qgame = row_q[col + 1].strip() if col + 1 < len(row_q) else ""
 
-            if not qgame_pattern.match(qgame):
+            if not QGAME_PATTERN.match(qgame):
                 continue
 
-            seed_top = row_top_seed[col].strip() if col < len(row_top_seed) else ""
-            team_top = row_top_team[col].strip() if col < len(row_top_team) else ""
-            team_bottom = row_bottom_team[col].strip() if col < len(row_bottom_team) else ""
+            seed_top = row_seed_top[col].strip()
+            team_top = row_team_top[col].strip()
+            team_bottom = row_team_bottom[col].strip()
 
-            # date/time/location
-            date = row_top_team[col + 1].strip() if col + 1 < len(row_top_team) else ""
-            time = row_bottom_team[col + 1].strip() if col + 1 < len(row_bottom_team) else ""
-            location = row_location[col].strip() if col < len(row_location) else ""
+            date = row_team_top[col + 1].strip() if col + 1 < len(row_team_top) else ""
+            time = row_team_bottom[col + 1].strip() if col + 1 < len(row_team_bottom) else ""
+            location = row_location[col].strip()
 
-            # Validate seeds
             if not seed_pattern.search(seed_top):
                 continue
             if not seed_pattern.search(seed_bottom):
                 continue
 
-            # Extract division name
             division = re.sub(r"\s*\d+(st|nd|rd|th)$", "", seed_top, flags=re.IGNORECASE)
             division = division.replace(" ", "")
 
@@ -84,45 +82,44 @@ def parse_qtr_finals(df):
     return results
 
 
+# -----------------------------
+#  SEMIFINAL PARSER (5-row blocks)
+# -----------------------------
 def parse_semi_finals(df):
     rows = df.fillna("").astype(str).values.tolist()
     results = []
-
-    sf_pattern = re.compile(r"SF\d+", re.IGNORECASE)
 
     START_ROW = 6
     i = START_ROW
 
     while i < len(rows) - 4:
-        row_seed_top = rows[i]
-        row_team_top = rows[i + 1]
-        row_sf = rows[i + 2]
-        row_team_bottom = rows[i + 3]
-        row_location = rows[i + 4]
+        row_seed_top = rows[i]        # Row 6
+        row_team_top = rows[i + 1]    # Row 7
+        row_seed_bottom = rows[i + 2] # Row 8
+        row_team_bottom = rows[i + 3] # Row 9
+        row_location = rows[i + 4]    # Row 10
 
-        col = 1  # semis always in first 3 columns
+        col = 1  # Bracket always starts in column B
 
-        # Detect SF#
-        sf_cell = row_sf[col + 1].strip()
-        if not sf_pattern.match(sf_cell):
+        sf_cell = row_seed_bottom[col + 1].strip()
+        m = SGAME_PATTERN.match(sf_cell)
+        if not m:
             i += 1
             continue
 
         sf_game = sf_cell
+        sf_num = m.group(1)
 
-        # Extract seeds & teams
         higher_seed = row_seed_top[col].strip()
         higher_team = row_team_top[col].strip()
 
-        lower_seed = row_sf[col].strip()
-        lower_team = row_team_bottom[col].strip()  # may be blank
+        lower_seed = row_seed_bottom[col].strip()
+        lower_team = row_team_bottom[col].strip()
 
-        # Extract date/time/location
         date = row_team_top[col + 1].strip()
         time = row_team_bottom[col + 1].strip()
         location = row_location[col].strip()
 
-        # Extract division
         division = re.sub(r"\s*\d+(st|nd|rd|th)$", "", higher_seed, flags=re.IGNORECASE)
         division = division.replace(" ", "")
 
@@ -133,21 +130,23 @@ def parse_semi_finals(df):
             "lower_seed_label": lower_seed,
             "lower_team": lower_team,
             "game": sf_game,
+            "sf_num": sf_num,
             "date": date,
             "time": time,
             "location": location,
         })
 
-        i += 5  # next semifinal block
+        i += 5
 
     return results
 
 
+# -----------------------------
+#  FINALS PARSER
+# -----------------------------
 def parse_finals(df):
     rows = df.fillna("").astype(str).values.tolist()
     results = []
-
-    fgame_pattern = re.compile(r"F\d+", re.IGNORECASE)
 
     START_ROW = 6
     i = START_ROW
@@ -160,29 +159,27 @@ def parse_finals(df):
         row_seed_bottom = rows[i + 4]
         row_location = rows[i + 5]
 
-        col = 1  # finals bracket always in first 3 columns
+        col = 1
 
-        # Detect F#
         f_cell = row_seed_top[col + 1].strip()
-        if not fgame_pattern.match(f_cell):
+        m = FGAME_PATTERN.match(f_cell)
+        if not m:
             i += 1
             continue
 
         fgame = f_cell
+        f_num = m.group(1)
 
-        # Extract seeds & teams
         higher_team = row_team_top[col].strip()
         higher_seed = row_seed_top[col].strip()
 
         lower_team = row_team_bottom[col].strip()
         lower_seed = row_seed_bottom[col].strip()
 
-        # Extract date/time/location
         date = row_team_top[col + 1].strip()
         time = row_team_bottom[col + 1].strip()
         location = row_location[col].strip()
 
-        # Extract division from seed label
         division = re.sub(r"\s*\d+(st|nd|rd|th)$", "", higher_seed, flags=re.IGNORECASE)
         division = division.replace(" ", "")
 
@@ -194,20 +191,27 @@ def parse_finals(df):
             "lower_seed_label": lower_seed,
             "lower_team": lower_team,
             "game": fgame,
+            "f_num": f_num,
             "date": date,
             "time": time,
             "location": location,
         })
 
-        i += 6  # move to next finals block
+        i += 6
 
     return results
 
 
+# -----------------------------
+#  BUILD BRACKETS
+# -----------------------------
 def build_brackets(qtr_data, semi_data, final_data):
     brackets = {}
 
-    # Index semis and finals by division
+    qtrs_by_div = {}
+    for q in qtr_data:
+        qtrs_by_div.setdefault(q["division"], []).append(q)
+
     semis_by_div = {}
     for s in semi_data:
         semis_by_div.setdefault(s["division"], []).append(s)
@@ -216,257 +220,119 @@ def build_brackets(qtr_data, semi_data, final_data):
     for f in final_data:
         finals_by_div.setdefault(f["division"], []).append(f)
 
-    # Group QTR by division
-    qtrs_by_div = {}
-    for q in qtr_data:
-        qtrs_by_div.setdefault(q["division"], []).append(q)
-
-    # 1. Divisions where HOLA appears in QTR
-    for division, qgames in qtrs_by_div.items():
+    for division in HOLA_DIVISIONS:
+        qgames = qtrs_by_div.get(division, [])
         semis = semis_by_div.get(division, [])
         finals = finals_by_div.get(division, [])
 
-        semi = semis[0] if semis else None
-        final = finals[0] if finals else None
-
-        # Find the Q-game with HOLA
-        hola_q = None
-        for q in qgames:
-            if "HOLA" in q["higher_team"] or "HOLA" in q["lower_team"]:
-                hola_q = q
-                break
-        if not hola_q:
-            continue
-
         bracket = {}
 
-        # Quarterfinal (HOLA is in this game by definition)
-        bracket["quarterfinal"] = {
-            "game": hola_q["qgame"],
-            "team1": {
-                "seed": hola_q["higher_seed_label"],
-                "name": hola_q["higher_team"],
-            },
-            "team2": {
-                "seed": hola_q["lower_seed_label"],
-                "name": hola_q["lower_team"],
-            },
-            "date": hola_q.get("date", ""),
-            "time": hola_q.get("time", ""),
-            "location": hola_q.get("location", ""),
-            "status": "highlight",  # HOLA reached QTR
-        }
+        # -------------------------
+        # QUARTERFINAL
+        # -------------------------
+        if qgames:
+            q = qgames[0]
+            q_num = QGAME_PATTERN.match(q["qgame"]).group(1)
 
-        # Semifinal
-        if semi:
-            # If HOLA appears in semi teams, highlight; otherwise dim
-            semi_has_hola = (
-                "HOLA" in semi.get("higher_team", "") or
-                "HOLA" in semi.get("lower_team", "")
-            )
-            bracket["semifinal"] = {
-                "game": semi["game"],
-                "team1": {
-                    "seed": semi["higher_seed_label"],
-                    "name": semi["higher_team"],
-                },
-                "team2": {
-                    "seed": semi["lower_seed_label"],
-                    "name": semi["lower_team"],
-                },
-                "date": semi.get("date", ""),
-                "time": semi.get("time", ""),
-                "location": semi.get("location", ""),
-                "status": "highlight" if semi_has_hola else "dim",
+            bracket["quarterfinal"] = {
+                "game": q["qgame"],
+                "team1": {"seed": q["higher_seed_label"], "name": q["higher_team"]},
+                "team2": {"seed": q["lower_seed_label"], "name": q["lower_team"]},
+                "date": q["date"],
+                "time": q["time"],
+                "location": q["location"],
+                "status": "highlight" if "HOLA" in q["higher_team"] or "HOLA" in q["lower_team"] else "dim",
             }
         else:
-            bracket["semifinal"] = {
+            bracket["quarterfinal"] = {
                 "game": "",
-                "team1": {"seed": "", "name": ""},
-                "team2": {"seed": "", "name": ""},
+                "team1": {"seed": "", "name": f"Winner of Quarterfinal Game 11"},
+                "team2": {"seed": "", "name": f"Winner of Quarterfinal Game 12"},
                 "date": "",
                 "time": "",
                 "location": "",
                 "status": "dim",
             }
 
-        # Final
-        if final:
-            final_has_hola = (
-                "HOLA" in final.get("higher_team", "") or
-                "HOLA" in final.get("lower_team", "")
-            )
+        # -------------------------
+        # SEMIFINAL
+        # -------------------------
+        if semis:
+            s = semis[0]
+            sf_num = s["sf_num"]
+
+            t1 = s["higher_team"] or f"Winner of Quarterfinal Game {sf_num}"
+            t2 = s["lower_team"] or f"Winner of Quarterfinal Game {sf_num}"
+
+            bracket["semifinal"] = {
+                "game": s["game"],
+                "team1": {"seed": s["higher_seed_label"], "name": t1},
+                "team2": {"seed": s["lower_seed_label"], "name": t2},
+                "date": s["date"],
+                "time": s["time"],
+                "location": s["location"],
+                "status": "highlight" if "HOLA" in t1 or "HOLA" in t2 else "dim",
+            }
+        else:
+            bracket["semifinal"] = {
+                "game": "",
+                "team1": {"seed": "", "name": "Winner of Quarterfinal Game 11"},
+                "team2": {"seed": "", "name": "Winner of Quarterfinal Game 12"},
+                "date": "",
+                "time": "",
+                "location": "",
+                "status": "dim",
+            }
+
+        # -------------------------
+        # FINAL
+        # -------------------------
+        if finals:
+            f = finals[0]
+            f_num = f["f_num"]
+
+            t1 = f["higher_team"] or f"Winner of Semifinal Game {f_num}"
+            t2 = f["lower_team"] or f"Winner of Semifinal Game {f_num}"
+
             bracket["final"] = {
-                "game": final["game"],
-                "team1": {
-                    "seed": final["higher_seed_label"],
-                    "name": final["higher_team"],
-                },
-                "team2": {
-                    "seed": final["lower_seed_label"],
-                    "name": final["lower_team"],
-                },
-                "date": final.get("date", ""),
-                "time": final.get("time", ""),
-                "location": final.get("location", ""),
-                "cup_name": final.get("cup_name", ""),
-                "status": "highlight" if final_has_hola else "dim",
+                "game": f["game"],
+                "team1": {"seed": f["higher_seed_label"], "name": t1},
+                "team2": {"seed": f["lower_seed_label"], "name": t2},
+                "date": f["date"],
+                "time": f["time"],
+                "location": f["location"],
+                "cup_name": f["cup_name"],
+                "status": "highlight" if "HOLA" in t1 or "HOLA" in t2 else "dim",
             }
         else:
             bracket["final"] = {
                 "game": "",
-                "team1": {"seed": "", "name": ""},
-                "team2": {"seed": "", "name": ""},
+                "team1": {"seed": "", "name": "Winner of Semifinal Game 11"},
+                "team2": {"seed": "", "name": "Winner of Semifinal Game 12"},
                 "date": "",
                 "time": "",
                 "location": "",
                 "cup_name": "",
                 "status": "dim",
             }
-
-        brackets[division] = bracket
-
-    # 2. Divisions where HOLA appears ONLY in semis
-    for division, semis in semis_by_div.items():
-        if division in brackets:
-            continue
-
-        hola_in_semi = any(
-            "HOLA" in s.get("higher_team", "") or
-            "HOLA" in s.get("lower_team", "")
-            for s in semis
-        )
-        if not hola_in_semi:
-            continue
-
-        semi = semis[0]
-        finals = finals_by_div.get(division, [])
-        final = finals[0] if finals else None
-
-        bracket = {
-            "quarterfinal": {
-                "game": "",
-                "team1": {"seed": "", "name": ""},
-                "team2": {"seed": "", "name": ""},
-                "date": "",
-                "time": "",
-                "location": "",
-                "status": "dim",
-            },
-            "semifinal": {
-                "game": semi["game"],
-                "team1": {
-                    "seed": semi["higher_seed_label"],
-                    "name": semi["higher_team"],
-                },
-                "team2": {
-                    "seed": semi["lower_seed_label"],
-                    "name": semi["lower_team"],
-                },
-                "date": semi.get("date", ""),
-                "time": semi.get("time", ""),
-                "location": semi.get("location", ""),
-                "status": "highlight",
-            },
-        }
-
-        if final:
-            final_has_hola = (
-                "HOLA" in final.get("higher_team", "") or
-                "HOLA" in final.get("lower_team", "")
-            )
-            bracket["final"] = {
-                "game": final["game"],
-                "team1": {
-                    "seed": final["higher_seed_label"],
-                    "name": final["higher_team"],
-                },
-                "team2": {
-                    "seed": final["lower_seed_label"],
-                    "name": final["lower_team"],
-                },
-                "date": final.get("date", ""),
-                "time": final.get("time", ""),
-                "location": final.get("location", ""),
-                "cup_name": final.get("cup_name", ""),
-                "status": "highlight" if final_has_hola else "dim",
-            }
-        else:
-            bracket["final"] = {
-                "game": "",
-                "team1": {"seed": "", "name": ""},
-                "team2": {"seed": "", "name": ""},
-                "date": "",
-                "time": "",
-                "location": "",
-                "cup_name": "",
-                "status": "dim",
-            }
-
-        brackets[division] = bracket
-
-    # 3. Divisions where HOLA appears ONLY in finals
-    for division, finals in finals_by_div.items():
-        if division in brackets:
-            continue
-
-        hola_in_final = any(
-            "HOLA" in f["higher_team"] or "HOLA" in f["lower_team"]
-            for f in finals
-        )
-        if not hola_in_final:
-            continue
-
-        final = finals[0]
-
-        bracket = {
-            "quarterfinal": {
-                "game": "",
-                "team1": {"seed": "", "name": ""},
-                "team2": {"seed": "", "name": ""},
-                "date": "",
-                "time": "",
-                "location": "",
-                "status": "dim",
-            },
-            "semifinal": {
-                "game": "",
-                "team1": {"seed": "", "name": ""},
-                "team2": {"seed": "", "name": ""},
-                "date": "",
-                "time": "",
-                "location": "",
-                "status": "dim",
-            },
-            "final": {
-                "game": final["game"],
-                "team1": {
-                    "seed": final["higher_seed_label"],
-                    "name": final["higher_team"],
-                },
-                "team2": {
-                    "seed": final["lower_seed_label"],
-                    "name": final["lower_team"],
-                },
-                "date": final.get("date", ""),
-                "time": final.get("time", ""),
-                "location": final.get("location", ""),
-                "cup_name": final.get("cup_name", ""),
-                "status": "highlight",
-            },
-        }
 
         brackets[division] = bracket
 
     return brackets
 
 
+# -----------------------------
+#  WRITE JSON
+# -----------------------------
 def write_json(brackets):
     DOCS_DIR.mkdir(exist_ok=True)
     with open(DOCS_DIR / "brackets.json", "w", encoding="utf-8") as f:
         json.dump(brackets, f, indent=2)
 
 
+# -----------------------------
+#  WRITE HTML
+# -----------------------------
 def write_html():
     html = """<!DOCTYPE html>
 <html lang="en">
@@ -478,7 +344,6 @@ def write_html():
 <body>
   <header>
     <h1>HOLA Playoff Brackets 2026</h1>
-    <p>Visual paths to the championship for all HOLA teams.</p>
   </header>
 
   <main id="brackets"></main>
@@ -518,95 +383,34 @@ def write_html():
         const wrapper = document.createElement('div');
         wrapper.className = 'bracket-grid';
 
-        //
-        // QUARTERFINAL
-        //
-        const q = document.createElement('div');
-        q.className = 'round round-q';
-        if (bracket.quarterfinal.game) {
-          const metaClass = getMetaClass(bracket.quarterfinal.date, bracket.quarterfinal.time);
-          const t1 = bracket.quarterfinal.team1.name
-            ? bracket.quarterfinal.team1.seed + " " + bracket.quarterfinal.team1.name
-            : bracket.quarterfinal.team1.seed;
-          const t2 = bracket.quarterfinal.team2.name
-            ? bracket.quarterfinal.team2.seed + " " + bracket.quarterfinal.team2.name
-            : bracket.quarterfinal.team2.seed;
+        function renderRound(round, label) {
+          const r = document.createElement('div');
+          r.className = 'round';
 
-          q.innerHTML = `
-            <div class="match match-hola ${bracket.quarterfinal.status}">
-              <div class="game-label">${bracket.quarterfinal.game} • Quarterfinal</div>
+          const metaClass = getMetaClass(round.date, round.time);
+
+          const t1 = round.team1.name || round.team1.seed;
+          const t2 = round.team2.name || round.team2.seed;
+
+          r.innerHTML = `
+            <div class="match ${round.status}">
+              <div class="game-label">${round.game || label}</div>
               <div class="teams">
                 <div>${t1}</div>
                 <div>${t2}</div>
               </div>
               <div class="meta ${metaClass}">
-                <span>📍 ${bracket.quarterfinal.location || "—"}</span>
-                <span>🕒 ${bracket.quarterfinal.date || "—"} ${bracket.quarterfinal.time || ""}</span>
+                <span>📍 ${round.location || "—"}</span>
+                <span>🕒 ${round.date || "—"} ${round.time || ""}</span>
               </div>
             </div>
           `;
+          return r;
         }
-        wrapper.appendChild(q);
 
-        //
-        // SEMIFINAL
-        //
-        const s = document.createElement('div');
-        s.className = 'round round-s';
-        if (bracket.semifinal.game) {
-          const metaClass = getMetaClass(bracket.semifinal.date, bracket.semifinal.time);
-          const t1 = bracket.semifinal.team1.name
-            ? bracket.semifinal.team1.name
-            : bracket.semifinal.team1.seed;
-          const t2 = bracket.semifinal.team2.name
-            ? bracket.semifinal.team2.name
-            : bracket.semifinal.team2.seed;
-
-          s.innerHTML = `
-            <div class="match ${bracket.semifinal.status}">
-              <div class="game-label">${bracket.semifinal.game} • Semifinal</div>
-              <div class="teams">
-                <div>${t1}</div>
-                <div>${t2}</div>
-              </div>
-              <div class="meta ${metaClass}">
-                <span>📍 ${bracket.semifinal.location || "—"}</span>
-                <span>🕒 ${bracket.semifinal.date || "—"} ${bracket.semifinal.time || ""}</span>
-              </div>
-            </div>
-          `;
-        }
-        wrapper.appendChild(s);
-
-        //
-        // FINAL
-        //
-        const f = document.createElement('div');
-        f.className = 'round round-f';
-        if (bracket.final.game) {
-          const metaClass = getMetaClass(bracket.final.date, bracket.final.time);
-          const t1 = bracket.final.team1.name
-            ? bracket.final.team1.name
-            : bracket.final.team1.seed;
-          const t2 = bracket.final.team2.name
-            ? bracket.final.team2.name
-            : bracket.final.team2.seed;
-
-          f.innerHTML = `
-            <div class="match match-final ${bracket.final.status}">
-              <div class="game-label">${bracket.final.game} • Final${bracket.final.cup_name ? " • " + bracket.final.cup_name : ""}</div>
-              <div class="teams">
-                <div>${t1}</div>
-                <div>${t2}</div>
-              </div>
-              <div class="meta ${metaClass}">
-                <span>📍 ${bracket.final.location || "—"}</span>
-                <span>🕒 ${bracket.final.date || "—"} ${bracket.final.time || ""}</span>
-              </div>
-            </div>
-          `;
-        }
-        wrapper.appendChild(f);
+        wrapper.appendChild(renderRound(bracket.quarterfinal, "Quarterfinal"));
+        wrapper.appendChild(renderRound(bracket.semifinal, "Semifinal"));
+        wrapper.appendChild(renderRound(bracket.final, "Final"));
 
         section.appendChild(wrapper);
         container.appendChild(section);
@@ -618,14 +422,17 @@ def write_html():
 </body>
 </html>
 """
-    DOCS_DIR.mkdir(exist_ok=True)
     with open(DOCS_DIR / "index.html", "w", encoding="utf-8") as f:
         f.write(html)
 
 
+# -----------------------------
+#  WRITE CSS
+# -----------------------------
 def write_css():
-    css = """body {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    css = """
+body {
+  font-family: system-ui, sans-serif;
   background: #0b1020;
   color: #f5f5f5;
   margin: 0;
@@ -636,11 +443,6 @@ header {
   padding: 1.5rem;
   text-align: center;
   background: #11162a;
-  border-bottom: 1px solid #222a3f;
-}
-
-h1 {
-  margin: 0 0 0.5rem;
 }
 
 main {
@@ -651,156 +453,62 @@ main {
   margin-bottom: 3rem;
 }
 
-.division h2 {
-  margin-bottom: 1rem;
-  border-left: 4px solid #ffd54f;
-  padding-left: 0.5rem;
-}
-
 .bracket-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 1.5rem;
-  align-items: center;
-}
-
-.round {
-  position: relative;
 }
 
 .match {
   background: #1a2138;
   border-radius: 8px;
-  padding: 0.75rem 1rem;
+  padding: 1rem;
   box-shadow: 0 0 0 1px #252c45;
-  transition: opacity 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
 }
 
-.match-hola {
-  border-color: #ffd54f;
-  box-shadow: 0 0 0 2px #ffd54f;
-  background: #2b2b10;
-}
-
-.match-final {
-  border-color: #ffb300;
-  box-shadow: 0 0 0 2px #ffb300;
-}
-
-/* Highlight / dim states */
 .match.highlight {
   opacity: 1;
   box-shadow: 0 0 0 2px #ffd54f;
-  transform: translateY(-2px);
 }
 
 .match.dim {
   opacity: 0.35;
 }
 
-/* Game label */
 .game-label {
   font-size: 0.8rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
   color: #9fa8da;
   margin-bottom: 0.5rem;
 }
 
-.teams > div {
-  margin-bottom: 0.25rem;
-}
-
-/* Meta (date/time/location) */
-.meta {
-  margin-top: 0.5rem;
-  font-size: 0.8rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-}
-
-/* Date/time states */
 .meta-upcoming {
   color: #a5ff9e;
-  font-weight: 600;
 }
 
 .meta-today {
   color: #64b5f6;
-  font-weight: 600;
 }
 
 .meta-past {
   color: #777;
   opacity: 0.7;
 }
-
-/* Connectors */
-.round-q::after,
-.round-s::after {
-  content: '';
-  position: absolute;
-  right: -0.75rem;
-  top: 50%;
-  width: 0.75rem;
-  height: 2px;
-  background: #c5cae9;
-}
-
-.round-s::before {
-  content: '';
-  position: absolute;
-  left: -0.75rem;
-  top: 50%;
-  width: 0.75rem;
-  height: 2px;
-  background: #c5cae9;
-}
-
-.round-f::before {
-  content: '';
-  position: absolute;
-  left: -0.75rem;
-  top: 50%;
-  width: 0.75rem;
-  height: 2px;
-  background: #ffb300;
-}
-
-@media (max-width: 768px) {
-  .bracket-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .round-q::after,
-  .round-s::after,
-  .round-s::before,
-  .round-f::before {
-    display: none;
-  }
-}
 """
-    DOCS_DIR.mkdir(exist_ok=True)
     with open(DOCS_DIR / "style.css", "w", encoding="utf-8") as f:
         f.write(css)
 
 
+# -----------------------------
+#  MAIN
+# -----------------------------
 def main():
     qtr, semis, finals = load_sheets()
 
     qtr_data = parse_qtr_finals(qtr)
-    print("QTR COUNT:", len(qtr_data))
-    print("FIRST QTR ROW:", qtr_data[0] if qtr_data else "NONE")
-
     semi_data = parse_semi_finals(semis)
-    print("SEMI COUNT:", len(semi_data))
-
     final_data = parse_finals(finals)
-    print("FINAL COUNT:", len(final_data))
 
     brackets = build_brackets(qtr_data, semi_data, final_data)
-    print("BRACKETS OBJECT:", brackets)
 
     write_json(brackets)
     write_html()
