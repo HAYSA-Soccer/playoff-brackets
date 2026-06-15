@@ -89,113 +89,114 @@ def parse_qtr_finals(df):
 def parse_semi_finals(df):
     rows = df.fillna("").astype(str).values.tolist()
     results = []
-    current_division = None
 
-    for r in range(len(rows)):
-        row = rows[r]
+    seed_pattern = re.compile(r"\d+(st|nd|rd|th)$", re.IGNORECASE)
+    game_pattern = re.compile(r"S?F?\d+", re.IGNORECASE)  # SF1, SF2, F1, etc.
 
-        if any(k in row[0] for k in ["boys", "girls", "B6", "G6", "PG"]):
-            current_division = row[0].strip()
+    START_ROW = 6
 
-        for c, cell in enumerate(row):
-            cell = cell.strip()
-            if SGAME_PATTERN.match(cell):
-                sgame = cell
-                field = f"Field {c + 1}"
-                time = ""
-                location = "Bridgewater"
+    for i in range(START_ROW, len(rows) - 4):
+        row_game = rows[i]
 
-                # time in same or next row
-                for look in rows[r:r + 3]:
-                    for item in look:
-                        t = item.strip()
-                        if "AM" in t or "PM" in t:
-                            time = t
+        if not any(game_pattern.match(cell.strip()) for cell in row_game):
+            continue
 
-                winners = []
-                for look in rows[r:r + 4]:
-                    for item in look:
-                        t = item.strip()
-                        if "Winner Q" in t:
-                            winners.append(t)
+        row_top_seed = rows[i - 2]
+        row_top_team = rows[i - 1]
+        row_bottom_team = rows[i + 1]
+        row_location = rows[i + 2]
 
-                if not winners:
-                    winners = ["TBD", "TBD"]
+        for col in range(0, len(row_game), 3):
+            seed_bottom = row_game[col].strip()
+            game = row_game[col + 1].strip() if col + 1 < len(row_game) else ""
 
-                results.append({
-                    "division": current_division,
-                    "sgame": sgame,
-                    "winners": winners,
-                    "field": field,
-                    "time": time,
-                    "location": location,
-                })
+            if not game_pattern.match(game):
+                continue
+
+            seed_top = row_top_seed[col].strip()
+            team_top = row_top_team[col].strip()
+            team_bottom = row_bottom_team[col].strip()
+
+            date = row_top_team[col + 1].strip() if col + 1 < len(row_top_team) else ""
+            time = row_bottom_team[col + 1].strip() if col + 1 < len(row_bottom_team) else ""
+            location = row_location[col].strip() if col < len(row_location) else ""
+
+            if not seed_pattern.search(seed_top):
+                continue
+            if not seed_pattern.search(seed_bottom):
+                continue
+
+            division = re.sub(r"\s*\d+(st|nd|rd|th)$", "", seed_top, flags=re.IGNORECASE)
+            division = division.replace(" ", "")
+
+            results.append({
+                "division": division,
+                "higher_seed_label": seed_top,
+                "higher_team": team_top,
+                "lower_seed_label": seed_bottom,
+                "lower_team": team_bottom,
+                "game": game,
+                "date": date,
+                "time": time,
+                "location": location,
+            })
 
     return results
-
 
 def parse_finals(df):
     rows = df.fillna("").astype(str).values.tolist()
     results = []
 
-    # column headers for fields
-    header_row = rows[0]
-    field_names = []
-    for c, cell in enumerate(header_row):
-        if "Field" in cell:
-            field_names.append((c, cell.strip()))
-    if not field_names:
-        field_names = [(i, f"Field {i + 1}") for i in range(len(header_row))]
+    seed_pattern = re.compile(r"\d+(st|nd|rd|th)$", re.IGNORECASE)
+    game_pattern = re.compile(r"F\d+", re.IGNORECASE)
 
-    for r in range(1, len(rows)):
-        row = rows[r]
-        for c, cell in enumerate(row):
-            cell = cell.strip()
-            if FGAME_PATTERN.match(cell):
-                fgame = cell
+    START_ROW = 6
 
-                # find field by column
-                field = "Field"
-                for idx, name in field_names:
-                    if idx == c:
-                        field = name
-                        break
+    for i in range(START_ROW, len(rows) - 4):
+        row_game = rows[i]
 
-                # look up for division/cup name
-                division = ""
-                for up in range(r - 1, -1, -1):
-                    text = rows[up][c].strip()
-                    if text and not FGAME_PATTERN.match(text) and "Seed" not in text and "AM" not in text and "PM" not in text:
-                        division = text
-                        break
+        if not any(game_pattern.match(cell.strip()) for cell in row_game):
+            continue
 
-                # time in same or previous row
-                time = ""
-                for look_r in [r, r - 1]:
-                    if 0 <= look_r < len(rows):
-                        for item in rows[look_r]:
-                            t = item.strip()
-                            if "AM" in t or "PM" in t:
-                                time = t
+        row_top_seed = rows[i - 2]
+        row_top_team = rows[i - 1]
+        row_bottom_team = rows[i + 1]
+        row_location = rows[i + 2]
 
-                # teams around F-game cell
-                team1 = ""
-                team2 = ""
-                # assume team1 above, team2 below in same column or nearby
-                if r - 1 >= 0:
-                    team1 = rows[r - 1][c].strip()
-                if r + 1 < len(rows):
-                    team2 = rows[r + 1][c].strip()
+        for col in range(0, len(row_game), 3):
+            seed_bottom = row_game[col].strip()
+            game = row_game[col + 1].strip() if col + 1 < len(row_game) else ""
 
-                results.append({
-                    "division": division,
-                    "fgame": fgame,
-                    "team1": team1,
-                    "team2": team2,
-                    "field": field,
-                    "time": time,
-                    "location": "Bridgewater",
-                })
+            if not game_pattern.match(game):
+                continue
+
+            seed_top = row_top_seed[col].strip()
+            team_top = row_top_team[col].strip()
+            team_bottom = row_bottom_team[col].strip()
+
+            date = row_top_team[col + 1].strip() if col + 1 < len(row_top_team) else ""
+            time = row_bottom_team[col + 1].strip() if col + 1 < len(row_bottom_team) else ""
+            location = row_location[col].strip() if col < len(row_location) else ""
+
+            if not seed_pattern.search(seed_top):
+                continue
+            if not seed_pattern.search(seed_bottom):
+                continue
+
+            division = re.sub(r"\s*\d+(st|nd|rd|th)$", "", seed_top, flags=re.IGNORECASE)
+            division = division.replace(" ", "")
+
+            results.append({
+                "division": division,
+                "higher_seed_label": seed_top,
+                "higher_team": team_top,
+                "lower_seed_label": seed_bottom,
+                "lower_team": team_bottom,
+                "game": game,
+                "date": date,
+                "time": time,
+                "location": location,
+            })
 
     return results
 
