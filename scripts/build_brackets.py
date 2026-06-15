@@ -288,7 +288,12 @@ def build_brackets(qtr_data, semi_data, final_data):
     for division, semis in semis_by_div.items():
         if division in brackets:
             continue
-        hola_in_semi = any("HOLA" in " ".join(s["winners"]) for s in semis)
+        hola_in_semi = any(
+            "HOLA" in s.get("higher_team", "") or
+            "HOLA" in s.get("lower_team", "")
+            for s in semis
+        )
+
         if not hola_in_semi:
             continue
         finals = finals_by_div.get(division, [])
