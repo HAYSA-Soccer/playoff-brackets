@@ -1,1 +1,101 @@
-{}
+{
+  "8.2boys": {
+    "quarterfinal": {
+      "game": "Q3",
+      "team1": {
+        "seed": "8.2 boys 3rd",
+        "name": "WHTH (Gould)"
+      },
+      "team2": {
+        "seed": "8.2 boys 6th",
+        "name": "HOLA (Luyo)"
+      },
+      "location": "Bridgewater F?",
+      "time": ""
+    },
+    "semifinal": {
+      "game": "",
+      "from": [
+        "TBD",
+        "TBD"
+      ],
+      "location": "",
+      "time": ""
+    },
+    "final": {
+      "game": "",
+      "from": [
+        "TBD",
+        "TBD"
+      ],
+      "location": "",
+      "time": ""
+    }
+  },
+  "6.2girls": {
+    "quarterfinal": {
+      "game": "Q11",
+      "team1": {
+        "seed": "6.2 girls 4th",
+        "name": "HOLA(Gracie)"
+      },
+      "team2": {
+        "seed": "6.2 girls 5th",
+        "name": "BRA (Wilson)"
+      },
+      "location": "Bridgewater F?",
+      "time": ""
+    },
+    "semifinal": {
+      "game": "",
+      "from": [
+        "TBD",
+        "TBD"
+      ],
+      "location": "",
+      "time": ""
+    },
+    "final": {
+      "game": "",
+      "from": [
+        "TBD",
+        "TBD"
+      ],
+      "location": "",
+      "time": ""
+    }
+  },
+  "B6.4": {
+    "quarterfinal": {
+      "game": "Q12",
+      "team1": {
+        "seed": "B6.4 4th",
+        "name": "HOLA (Johnson)"
+      },
+      "team2": {
+        "seed": "B 6.4 5th",
+        "name": "BRG1(Duggan)"
+      },
+      "location": "Bridgewater F?",
+      "time": ""
+    },
+    "semifinal": {
+      "game": "",
+      "from": [
+        "TBD",
+        "TBD"
+      ],
+      "location": "",
+      "time": ""
+    },
+    "final": {
+      "game": "",
+      "from": [
+        "TBD",
+        "TBD"
+      ],
+      "location": "",
+      "time": ""
+    }
+  }
+}
