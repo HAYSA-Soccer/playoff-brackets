@@ -91,114 +91,141 @@ def parse_semi_finals(df):
     results = []
 
     seed_pattern = re.compile(r"\d+(st|nd|rd|th)$", re.IGNORECASE)
-    game_pattern = re.compile(r"S?F?\d+", re.IGNORECASE)  # SF1, SF2, F1, etc.
+    sf_pattern = re.compile(r"SF\d+", re.IGNORECASE)
 
     START_ROW = 6
+    i = START_ROW
 
-    for i in range(START_ROW, len(rows) - 4):
-        row_game = rows[i]
+    while i < len(rows) - 4:
+        row_seed_top = rows[i]
+        row_team_top = rows[i + 1]
+        row_sf = rows[i + 2]
+        row_team_bottom = rows[i + 3]
+        row_location = rows[i + 4]
 
-        if not any(game_pattern.match(cell.strip()) for cell in row_game):
+        # Detect SF#
+        sf_game = None
+        sf_col = None
+        for col in range(0, len(row_sf), 3):
+            cell = row_sf[col + 1].strip() if col + 1 < len(row_sf) else ""
+            if sf_pattern.match(cell):
+                sf_game = cell
+                sf_col = col
+                break
+
+        if not sf_game:
+            i += 1
             continue
 
-        row_top_seed = rows[i - 2]
-        row_top_team = rows[i - 1]
-        row_bottom_team = rows[i + 1]
-        row_location = rows[i + 2]
+        # Extract seeds & teams
+        higher_seed = row_seed_top[sf_col].strip()
+        higher_team = row_team_top[sf_col].strip()
+        lower_seed = row_sf[sf_col].strip()
+        lower_team = row_team_bottom[sf_col].strip()
 
-        for col in range(0, len(row_game), 3):
-            seed_bottom = row_game[col].strip()
-            game = row_game[col + 1].strip() if col + 1 < len(row_game) else ""
+        # Extract optional date/time/location
+        date = row_team_top[sf_col + 1].strip() if sf_col + 1 < len(row_team_top) else ""
+        time = row_team_bottom[sf_col + 1].strip() if sf_col + 1 < len(row_team_bottom) else ""
+        location = row_location[sf_col].strip() if sf_col < len(row_location) else ""
 
-            if not game_pattern.match(game):
-                continue
+        # Validate seeds
+        if not seed_pattern.search(higher_seed) or not seed_pattern.search(lower_seed):
+            i += 1
+            continue
 
-            seed_top = row_top_seed[col].strip()
-            team_top = row_top_team[col].strip()
-            team_bottom = row_bottom_team[col].strip()
+        # Extract division
+        division = re.sub(r"\s*\d+(st|nd|rd|th)$", "", higher_seed, flags=re.IGNORECASE)
+        division = division.replace(" ", "")
 
-            date = row_top_team[col + 1].strip() if col + 1 < len(row_top_team) else ""
-            time = row_bottom_team[col + 1].strip() if col + 1 < len(row_bottom_team) else ""
-            location = row_location[col].strip() if col < len(row_location) else ""
+        results.append({
+            "division": division,
+            "higher_seed_label": higher_seed,
+            "higher_team": higher_team,
+            "lower_seed_label": lower_seed,
+            "lower_team": lower_team,
+            "game": sf_game,
+            "date": date,
+            "time": time,
+            "location": location,
+        })
 
-            if not seed_pattern.search(seed_top):
-                continue
-            if not seed_pattern.search(seed_bottom):
-                continue
-
-            division = re.sub(r"\s*\d+(st|nd|rd|th)$", "", seed_top, flags=re.IGNORECASE)
-            division = division.replace(" ", "")
-
-            results.append({
-                "division": division,
-                "higher_seed_label": seed_top,
-                "higher_team": team_top,
-                "lower_seed_label": seed_bottom,
-                "lower_team": team_bottom,
-                "game": game,
-                "date": date,
-                "time": time,
-                "location": location,
-            })
+        # Move to next 5‑row block
+        i += 5
 
     return results
+
+
 
 def parse_finals(df):
     rows = df.fillna("").astype(str).values.tolist()
     results = []
 
     seed_pattern = re.compile(r"\d+(st|nd|rd|th)$", re.IGNORECASE)
-    game_pattern = re.compile(r"F\d+", re.IGNORECASE)
+    fgame_pattern = re.compile(r"F\d+", re.IGNORECASE)
 
     START_ROW = 6
+    i = START_ROW
 
-    for i in range(START_ROW, len(rows) - 4):
-        row_game = rows[i]
+    while i < len(rows) - 5:
+        row_cup = rows[i]
+        row_team_top = rows[i + 1]
+        row_seed_top = rows[i + 2]
+        row_team_bottom = rows[i + 3]
+        row_seed_bottom = rows[i + 4]
+        row_location = rows[i + 5]
 
-        if not any(game_pattern.match(cell.strip()) for cell in row_game):
+        # Detect F#
+        fgame = None
+        fcol = None
+        for col in range(0, len(row_seed_top), 3):
+            cell = row_seed_top[col + 1].strip() if col + 1 < len(row_seed_top) else ""
+            if fgame_pattern.match(cell):
+                fgame = cell
+                fcol = col
+                break
+
+        if not fgame:
+            i += 1
             continue
 
-        row_top_seed = rows[i - 2]
-        row_top_team = rows[i - 1]
-        row_bottom_team = rows[i + 1]
-        row_location = rows[i + 2]
+        # Extract seeds & teams
+        higher_seed = row_seed_top[fcol].strip()
+        higher_team = row_team_top[fcol].strip()
+        lower_seed = row_seed_bottom[fcol].strip()
+        lower_team = row_team_bottom[fcol].strip()
 
-        for col in range(0, len(row_game), 3):
-            seed_bottom = row_game[col].strip()
-            game = row_game[col + 1].strip() if col + 1 < len(row_game) else ""
+        # Extract optional date/time/location
+        date = row_team_top[fcol + 1].strip() if fcol + 1 < len(row_team_top) else ""
+        time = row_team_bottom[fcol + 1].strip() if fcol + 1 < len(row_team_bottom) else ""
+        location = row_location[fcol].strip() if fcol < len(row_location) else ""
 
-            if not game_pattern.match(game):
-                continue
+        # Validate seeds
+        if not seed_pattern.search(higher_seed) or not seed_pattern.search(lower_seed):
+            i += 1
+            continue
 
-            seed_top = row_top_seed[col].strip()
-            team_top = row_top_team[col].strip()
-            team_bottom = row_bottom_team[col].strip()
+        # Extract division
+        division = re.sub(r"\s*\d+(st|nd|rd|th)$", "", higher_seed, flags=re.IGNORECASE)
+        division = division.replace(" ", "")
 
-            date = row_top_team[col + 1].strip() if col + 1 < len(row_top_team) else ""
-            time = row_bottom_team[col + 1].strip() if col + 1 < len(row_bottom_team) else ""
-            location = row_location[col].strip() if col < len(row_location) else ""
+        results.append({
+            "division": division,
+            "higher_seed_label": higher_seed,
+            "higher_team": higher_team,
+            "lower_seed_label": lower_seed,
+            "lower_team": lower_team,
+            "game": fgame,
+            "date": date,
+            "time": time,
+            "location": location,
+        })
 
-            if not seed_pattern.search(seed_top):
-                continue
-            if not seed_pattern.search(seed_bottom):
-                continue
-
-            division = re.sub(r"\s*\d+(st|nd|rd|th)$", "", seed_top, flags=re.IGNORECASE)
-            division = division.replace(" ", "")
-
-            results.append({
-                "division": division,
-                "higher_seed_label": seed_top,
-                "higher_team": team_top,
-                "lower_seed_label": seed_bottom,
-                "lower_team": team_bottom,
-                "game": game,
-                "date": date,
-                "time": time,
-                "location": location,
-            })
+        # Move to next 6‑row block
+        i += 6
 
     return results
+
+
 
 
 def build_brackets(qtr_data, semi_data, final_data):
