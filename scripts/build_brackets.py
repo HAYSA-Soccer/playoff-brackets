@@ -24,62 +24,51 @@ def load_sheets():
 def parse_qtr_finals(df):
     rows = df.fillna("").astype(str).values.tolist()
     results = []
-    i = 0
 
-    while i < len(rows):
-        row = rows[i]
-        label = row[0].strip()
+    # Skip header junk — real data starts around row 4
+    start_row = 4
 
-        # Detect seed line by ending with st/nd/rd/th
-        if re.search(r"\d+(st|nd|rd|th)$", label, re.IGNORECASE):
+    i = start_row
+    while i < len(rows) - 3:
+        row_seed = rows[i]
+        row_team = rows[i + 1]
+        row_seed_low = rows[i + 2]
+        row_team_low = rows[i + 3]
 
-            # Extract division name (everything before the seed)
-            division = re.sub(r"\s*\d+(st|nd|rd|th)$", "", label, flags=re.IGNORECASE).strip()
+        # Scan across columns in groups of 3: [seed][Q#][blank]
+        for col in range(1, len(row_seed), 3):
+            seed_label = row_seed[col].strip()
+            qgame = row_seed[col + 1].strip() if col + 1 < len(row_seed) else ""
+            team = row_team[col].strip() if col < len(row_team) else ""
 
-            # Normalize division (remove spaces like "B 6.4" → "B6.4")
-            division = division.replace(" ", "")
+            seed_label_low = row_seed_low[col].strip()
+            qgame_low = row_seed_low[col + 1].strip() if col + 1 < len(row_seed_low) else ""
+            team_low = row_team_low[col].strip() if col < len(row_team_low) else ""
 
-            # Ensure enough rows exist
-            if i + 3 >= len(rows):
-                i += 1
+            # Must have a Q-game number like Q1, Q2, Q12, etc.
+            if not QGAME_PATTERN.match(qgame):
                 continue
 
-            higher_seed_label = rows[i][0].strip()
-            higher_team = rows[i + 1][0].strip()
+            # Must have a valid seed label ending in st/nd/rd/th
+            if not re.search(r"\d+(st|nd|rd|th)$", seed_label, re.IGNORECASE):
+                continue
 
-            lower_seed_label = rows[i + 2][0].strip()
-            lower_team_row = rows[i + 3]
-            lower_team = lower_team_row[0].strip()
+            # Extract division name from seed label
+            division = re.sub(r"\s*\d+(st|nd|rd|th)$", "", seed_label, flags=re.IGNORECASE).strip()
+            division = division.replace(" ", "")  # normalize B 6.4 → B6.4
 
-            # Find Q-game number anywhere in row 3
-            qgame = None
-            for cell in rows[i + 2]:
-                cell = cell.strip()
-                if QGAME_PATTERN.match(cell):
-                    qgame = cell
-                    break
+            results.append({
+                "division": division,
+                "higher_seed_label": seed_label,
+                "higher_team": team,
+                "lower_seed_label": seed_label_low,
+                "lower_team": team_low,
+                "qgame": qgame,
+            })
 
-            if qgame:
-                results.append({
-                    "division": division,
-                    "higher_seed_label": higher_seed_label,
-                    "higher_team": higher_team,
-                    "lower_seed_label": lower_seed_label,
-                    "lower_team": lower_team,
-                    "qgame": qgame,
-                })
-
-            i += 4
-            continue
-
-        i += 1
+        i += 4  # move to next block
 
     return results
-
-
-
-
-
 
 def parse_semi_finals(df):
     rows = df.fillna("").astype(str).values.tolist()
