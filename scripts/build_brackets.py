@@ -29,12 +29,18 @@ def parse_qtr_finals(df):
         row = rows[i]
         label = row[0].strip()
 
-        # seed line like "8.2 boys 3rd"
-        m = SEED_PATTERN.search(label)
-        if m:
-            # division is everything before the seed rank
-            division = m.group(1).strip()  # e.g. "8.2 boys"
+        # Detect seed line: must end with "3rd", "4th", "5th", etc.
+        if re.search(r"(st|nd|rd|th)$", label, re.IGNORECASE):
 
+            # Extract division name from the seed label
+            # Examples:
+            # "B6.4 4th" → "B6.4"
+            # "B 6.4 5th" → "B6.4"
+            # "8.2 boys 3rd" → "8.2 boys"
+            division = re.sub(r"\s*\d+(st|nd|rd|th)$", "", label, flags=re.IGNORECASE).strip()
+            division = division.replace(" ", "") if re.match(r"[A-Za-z]\s*\d", division) else division
+
+            # Ensure we have enough rows
             if i + 3 >= len(rows):
                 i += 1
                 continue
@@ -46,10 +52,12 @@ def parse_qtr_finals(df):
             lower_team_row = rows[i + 3]
             lower_team = lower_team_row[0].strip()
 
+            # Find Q-game number in row 3
             qgame = None
-            for cell in lower_team_row:
-                if QGAME_PATTERN.match(cell.strip()):
-                    qgame = cell.strip()
+            for cell in rows[i + 2]:
+                cell = cell.strip()
+                if QGAME_PATTERN.match(cell):
+                    qgame = cell
                     break
 
             if qgame:
@@ -68,6 +76,7 @@ def parse_qtr_finals(df):
         i += 1
 
     return results
+
 
 
 
