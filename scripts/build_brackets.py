@@ -601,6 +601,10 @@ def main():
     write_html()
     write_css()
 
+qtr_data = parse_qtr_finals(qtr_df)
+print("QTR COUNT:", len(qtr_data))
+print("FIRST QTR ROW:", qtr_data[0] if qtr_data else "NONE")
+
 
 if __name__ == "__main__":
     main()
