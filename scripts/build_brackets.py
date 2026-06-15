@@ -592,18 +592,23 @@ main {
 
 def main():
     qtr, semis, finals = load_sheets()
+
     qtr_data = parse_qtr_finals(qtr)
+    print("QTR COUNT:", len(qtr_data))
+    print("FIRST QTR ROW:", qtr_data[0] if qtr_data else "NONE")
+
     semi_data = parse_semi_finals(semis)
+    print("SEMI COUNT:", len(semi_data))
+
     final_data = parse_finals(finals)
+    print("FINAL COUNT:", len(final_data))
 
     brackets = build_brackets(qtr_data, semi_data, final_data)
+    print("BRACKETS OBJECT:", brackets)
+
     write_json(brackets)
     write_html()
     write_css()
-
-qtr_data = parse_qtr_finals(qtr_df)
-print("QTR COUNT:", len(qtr_data))
-print("FIRST QTR ROW:", qtr_data[0] if qtr_data else "NONE")
 
 
 if __name__ == "__main__":
