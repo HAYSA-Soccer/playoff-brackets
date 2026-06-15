@@ -2,7 +2,7 @@ import pandas as pd
 from pathlib import Path
 import json
 import re
- 
+
 DATA_PATH = Path("data/2026_Playoff_Schedule_Final.xlsx")
 DOCS_DIR = Path("docs")
 
@@ -18,7 +18,6 @@ def load_sheets():
     semis = pd.read_excel(xls, "Semi Finals")
     finals = pd.read_excel(xls, "Finals")
     return qtr, semis, finals
-
 
 
 def parse_qtr_finals(df):
@@ -37,7 +36,7 @@ def parse_qtr_finals(df):
         if not any(qgame_pattern.match(cell.strip()) for cell in row_q):
             continue
 
-        # Identify the surrounding rows
+        # Surrounding rows
         row_top_seed = rows[i - 2]        # Row A
         row_top_team = rows[i - 1]        # Row B
         row_bottom_team = rows[i + 1]     # Row D
@@ -55,7 +54,7 @@ def parse_qtr_finals(df):
             team_top = row_top_team[col].strip() if col < len(row_top_team) else ""
             team_bottom = row_bottom_team[col].strip() if col < len(row_bottom_team) else ""
 
-            # NEW: date/time/location
+            # date/time/location
             date = row_top_team[col + 1].strip() if col + 1 < len(row_top_team) else ""
             time = row_bottom_team[col + 1].strip() if col + 1 < len(row_bottom_team) else ""
             location = row_location[col].strip() if col < len(row_location) else ""
@@ -83,9 +82,6 @@ def parse_qtr_finals(df):
             })
 
     return results
-
-
-
 
 
 def parse_semi_finals(df):
@@ -145,8 +141,6 @@ def parse_semi_finals(df):
         i += 5  # next semifinal block
 
     return results
-
-
 
 
 def parse_finals(df):
@@ -210,8 +204,6 @@ def parse_finals(df):
     return results
 
 
-
-
 def build_brackets(qtr_data, semi_data, final_data):
     brackets = {}
 
@@ -229,9 +221,7 @@ def build_brackets(qtr_data, semi_data, final_data):
     for q in qtr_data:
         qtrs_by_div.setdefault(q["division"], []).append(q)
 
-    # ---------------------------------------------------------
     # 1. Divisions where HOLA appears in QTR
-    # ---------------------------------------------------------
     for division, qgames in qtrs_by_div.items():
         semis = semis_by_div.get(division, [])
         finals = finals_by_div.get(division, [])
@@ -250,9 +240,7 @@ def build_brackets(qtr_data, semi_data, final_data):
 
         bracket = {}
 
-        # -------------------------
-        # Quarterfinal
-        # -------------------------
+        # Quarterfinal (HOLA is in this game by definition)
         bracket["quarterfinal"] = {
             "game": hola_q["qgame"],
             "team1": {
@@ -266,12 +254,16 @@ def build_brackets(qtr_data, semi_data, final_data):
             "date": hola_q.get("date", ""),
             "time": hola_q.get("time", ""),
             "location": hola_q.get("location", ""),
+            "status": "highlight",  # HOLA reached QTR
         }
 
-        # -------------------------
         # Semifinal
-        # -------------------------
         if semi:
+            # If HOLA appears in semi teams, highlight; otherwise dim
+            semi_has_hola = (
+                "HOLA" in semi.get("higher_team", "") or
+                "HOLA" in semi.get("lower_team", "")
+            )
             bracket["semifinal"] = {
                 "game": semi["game"],
                 "team1": {
@@ -285,6 +277,7 @@ def build_brackets(qtr_data, semi_data, final_data):
                 "date": semi.get("date", ""),
                 "time": semi.get("time", ""),
                 "location": semi.get("location", ""),
+                "status": "highlight" if semi_has_hola else "dim",
             }
         else:
             bracket["semifinal"] = {
@@ -294,12 +287,15 @@ def build_brackets(qtr_data, semi_data, final_data):
                 "date": "",
                 "time": "",
                 "location": "",
+                "status": "dim",
             }
 
-        # -------------------------
         # Final
-        # -------------------------
         if final:
+            final_has_hola = (
+                "HOLA" in final.get("higher_team", "") or
+                "HOLA" in final.get("lower_team", "")
+            )
             bracket["final"] = {
                 "game": final["game"],
                 "team1": {
@@ -313,6 +309,8 @@ def build_brackets(qtr_data, semi_data, final_data):
                 "date": final.get("date", ""),
                 "time": final.get("time", ""),
                 "location": final.get("location", ""),
+                "cup_name": final.get("cup_name", ""),
+                "status": "highlight" if final_has_hola else "dim",
             }
         else:
             bracket["final"] = {
@@ -322,13 +320,13 @@ def build_brackets(qtr_data, semi_data, final_data):
                 "date": "",
                 "time": "",
                 "location": "",
+                "cup_name": "",
+                "status": "dim",
             }
 
         brackets[division] = bracket
 
-    # ---------------------------------------------------------
     # 2. Divisions where HOLA appears ONLY in semis
-    # ---------------------------------------------------------
     for division, semis in semis_by_div.items():
         if division in brackets:
             continue
@@ -353,6 +351,7 @@ def build_brackets(qtr_data, semi_data, final_data):
                 "date": "",
                 "time": "",
                 "location": "",
+                "status": "dim",
             },
             "semifinal": {
                 "game": semi["game"],
@@ -367,10 +366,15 @@ def build_brackets(qtr_data, semi_data, final_data):
                 "date": semi.get("date", ""),
                 "time": semi.get("time", ""),
                 "location": semi.get("location", ""),
+                "status": "highlight",
             },
         }
 
         if final:
+            final_has_hola = (
+                "HOLA" in final.get("higher_team", "") or
+                "HOLA" in final.get("lower_team", "")
+            )
             bracket["final"] = {
                 "game": final["game"],
                 "team1": {
@@ -384,6 +388,8 @@ def build_brackets(qtr_data, semi_data, final_data):
                 "date": final.get("date", ""),
                 "time": final.get("time", ""),
                 "location": final.get("location", ""),
+                "cup_name": final.get("cup_name", ""),
+                "status": "highlight" if final_has_hola else "dim",
             }
         else:
             bracket["final"] = {
@@ -393,13 +399,13 @@ def build_brackets(qtr_data, semi_data, final_data):
                 "date": "",
                 "time": "",
                 "location": "",
+                "cup_name": "",
+                "status": "dim",
             }
 
         brackets[division] = bracket
 
-    # ---------------------------------------------------------
     # 3. Divisions where HOLA appears ONLY in finals
-    # ---------------------------------------------------------
     for division, finals in finals_by_div.items():
         if division in brackets:
             continue
@@ -421,6 +427,7 @@ def build_brackets(qtr_data, semi_data, final_data):
                 "date": "",
                 "time": "",
                 "location": "",
+                "status": "dim",
             },
             "semifinal": {
                 "game": "",
@@ -429,6 +436,7 @@ def build_brackets(qtr_data, semi_data, final_data):
                 "date": "",
                 "time": "",
                 "location": "",
+                "status": "dim",
             },
             "final": {
                 "game": final["game"],
@@ -443,12 +451,15 @@ def build_brackets(qtr_data, semi_data, final_data):
                 "date": final.get("date", ""),
                 "time": final.get("time", ""),
                 "location": final.get("location", ""),
+                "cup_name": final.get("cup_name", ""),
+                "status": "highlight",
             },
         }
 
         brackets[division] = bracket
 
     return brackets
+
 
 def write_json(brackets):
     DOCS_DIR.mkdir(exist_ok=True)
@@ -473,6 +484,24 @@ def write_html():
   <main id="brackets"></main>
 
   <script>
+    function getMetaClass(dateStr, timeStr) {
+      if (!dateStr || !timeStr) return "meta-past";
+
+      const dt = new Date(dateStr + " " + timeStr);
+      if (isNaN(dt.getTime())) return "meta-past";
+
+      const now = new Date();
+
+      const sameDay =
+        dt.getFullYear() === now.getFullYear() &&
+        dt.getMonth() === now.getMonth() &&
+        dt.getDate() === now.getDate();
+
+      if (dt > now) return "meta-upcoming";
+      if (sameDay) return "meta-today";
+      return "meta-past";
+    }
+
     async function loadBrackets() {
       const res = await fetch('brackets.json');
       const data = await res.json();
@@ -495,16 +524,24 @@ def write_html():
         const q = document.createElement('div');
         q.className = 'round round-q';
         if (bracket.quarterfinal.game) {
+          const metaClass = getMetaClass(bracket.quarterfinal.date, bracket.quarterfinal.time);
+          const t1 = bracket.quarterfinal.team1.name
+            ? bracket.quarterfinal.team1.seed + " " + bracket.quarterfinal.team1.name
+            : bracket.quarterfinal.team1.seed;
+          const t2 = bracket.quarterfinal.team2.name
+            ? bracket.quarterfinal.team2.seed + " " + bracket.quarterfinal.team2.name
+            : bracket.quarterfinal.team2.seed;
+
           q.innerHTML = `
-            <div class="match match-hola">
+            <div class="match match-hola ${bracket.quarterfinal.status}">
               <div class="game-label">${bracket.quarterfinal.game} • Quarterfinal</div>
               <div class="teams">
-                <div>${bracket.quarterfinal.team1.seed} ${bracket.quarterfinal.team1.name}</div>
-                <div>${bracket.quarterfinal.team2.seed} ${bracket.quarterfinal.team2.name}</div>
+                <div>${t1}</div>
+                <div>${t2}</div>
               </div>
-              <div class="meta">
+              <div class="meta ${metaClass}">
                 <span>📍 ${bracket.quarterfinal.location || "—"}</span>
-                <span>🕒 ${bracket.quarterfinal.time || "—"}</span>
+                <span>🕒 ${bracket.quarterfinal.date || "—"} ${bracket.quarterfinal.time || ""}</span>
               </div>
             </div>
           `;
@@ -517,16 +554,24 @@ def write_html():
         const s = document.createElement('div');
         s.className = 'round round-s';
         if (bracket.semifinal.game) {
+          const metaClass = getMetaClass(bracket.semifinal.date, bracket.semifinal.time);
+          const t1 = bracket.semifinal.team1.name
+            ? bracket.semifinal.team1.name
+            : bracket.semifinal.team1.seed;
+          const t2 = bracket.semifinal.team2.name
+            ? bracket.semifinal.team2.name
+            : bracket.semifinal.team2.seed;
+
           s.innerHTML = `
-            <div class="match">
+            <div class="match ${bracket.semifinal.status}">
               <div class="game-label">${bracket.semifinal.game} • Semifinal</div>
               <div class="teams">
-                <div>${bracket.semifinal.team1.seed} ${bracket.semifinal.team1.name}</div>
-                <div>${bracket.semifinal.team2.seed} ${bracket.semifinal.team2.name}</div>
+                <div>${t1}</div>
+                <div>${t2}</div>
               </div>
-              <div class="meta">
+              <div class="meta ${metaClass}">
                 <span>📍 ${bracket.semifinal.location || "—"}</span>
-                <span>🕒 ${bracket.semifinal.time || "—"}</span>
+                <span>🕒 ${bracket.semifinal.date || "—"} ${bracket.semifinal.time || ""}</span>
               </div>
             </div>
           `;
@@ -539,16 +584,24 @@ def write_html():
         const f = document.createElement('div');
         f.className = 'round round-f';
         if (bracket.final.game) {
+          const metaClass = getMetaClass(bracket.final.date, bracket.final.time);
+          const t1 = bracket.final.team1.name
+            ? bracket.final.team1.name
+            : bracket.final.team1.seed;
+          const t2 = bracket.final.team2.name
+            ? bracket.final.team2.name
+            : bracket.final.team2.seed;
+
           f.innerHTML = `
-            <div class="match match-final">
-              <div class="game-label">${bracket.final.game} • Final</div>
+            <div class="match match-final ${bracket.final.status}">
+              <div class="game-label">${bracket.final.game} • Final${bracket.final.cup_name ? " • " + bracket.final.cup_name : ""}</div>
               <div class="teams">
-                <div>${bracket.final.team1.seed} ${bracket.final.team1.name}</div>
-                <div>${bracket.final.team2.seed} ${bracket.final.team2.name}</div>
+                <div>${t1}</div>
+                <div>${t2}</div>
               </div>
-              <div class="meta">
+              <div class="meta ${metaClass}">
                 <span>📍 ${bracket.final.location || "—"}</span>
-                <span>🕒 ${bracket.final.time || "—"}</span>
+                <span>🕒 ${bracket.final.date || "—"} ${bracket.final.time || ""}</span>
               </div>
             </div>
           `;
@@ -620,6 +673,7 @@ main {
   border-radius: 8px;
   padding: 0.75rem 1rem;
   box-shadow: 0 0 0 1px #252c45;
+  transition: opacity 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
 }
 
 .match-hola {
@@ -633,6 +687,18 @@ main {
   box-shadow: 0 0 0 2px #ffb300;
 }
 
+/* Highlight / dim states */
+.match.highlight {
+  opacity: 1;
+  box-shadow: 0 0 0 2px #ffd54f;
+  transform: translateY(-2px);
+}
+
+.match.dim {
+  opacity: 0.35;
+}
+
+/* Game label */
 .game-label {
   font-size: 0.8rem;
   text-transform: uppercase;
@@ -645,15 +711,32 @@ main {
   margin-bottom: 0.25rem;
 }
 
+/* Meta (date/time/location) */
 .meta {
   margin-top: 0.5rem;
   font-size: 0.8rem;
-  color: #c5cae9;
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
 }
 
+/* Date/time states */
+.meta-upcoming {
+  color: #a5ff9e;
+  font-weight: 600;
+}
+
+.meta-today {
+  color: #64b5f6;
+  font-weight: 600;
+}
+
+.meta-past {
+  color: #777;
+  opacity: 0.7;
+}
+
+/* Connectors */
 .round-q::after,
 .round-s::after {
   content: '';
